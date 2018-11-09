@@ -26,14 +26,15 @@ import Bootstrap.Form.InputGroup as InputGroup
 import Bootstrap.Button as Button
 import Bootstrap.Progress as Progress
 import Bootstrap.Modal as Modal
+import Bootstrap.Text as Text
 
 import Json.Encode as Enco exposing (..) 
 import Json.Decode as Deco exposing (..) 
 
-import Tools 
+import Tools exposing(..)
 
 init: Model
-init = Model Modal.hidden Nothing 0 []
+init = Model Modal.hidden Nothing 0 initSort []
      -- [ Job 1 "massive darkness" initTasks Simple Nothing
      -- , Job 2 "star trek" initTasks Simple Nothing ]
 
@@ -100,14 +101,41 @@ updateTask id taskName toggle jobs =
     in
         (List.map foreachjob jobs)
 
+-- =================================================================
+-- =================================================================
+
+initSort = (ById orderById, ById orderById, ById orderById)
+
+orderById: Job -> Int
+orderById job = job.id
+
+orderByName: Job -> String
+orderByName job = job.name
+
+orderByCompletion: Job -> Float
+orderByCompletion job = 100 - (computeCompletness job.tasks)
+
+sortBy: OrderBy -> (List Job) -> (List Job)
+sortBy order list =
+    case order of
+        ByName o -> List.sortBy o list
+        ById o -> List.sortBy o list
+        ByCompetion o -> List.sortBy o list 
+
+type OrderBy = ByName (Job -> String)
+             | ById (Job -> Int)
+             | ByCompetion (Job -> Float)
+
+-- =================================================================
+-- =================================================================
 
 type alias Model = 
   { create: Modal.Visibility
   , creating: Maybe Job
   , nextId: JobId
+  , sort: (OrderBy, OrderBy, OrderBy)
   , jobs: List Job
   }
-
 
 type Msg = Noop 
 
@@ -124,6 +152,9 @@ type Msg = Noop
         -- update tasks job
         | UpdateJob JobId ViewKind
         | UpdateTask JobId String Bool
+
+        -- sortBy 
+        | SortBy Int OrderBy
 
 
 update: Msg -> Model -> Model
@@ -196,6 +227,10 @@ update msg model =
                 jobs = (updateTask jobId taskName enabled model.jobs) 
             }
 
+        SortBy col by ->  
+            { model | sort =  by |> Tools.set col model.sort }
+
+
 -- =================================================================
 -- help routines
 
@@ -219,7 +254,6 @@ encode: Model -> Enco.Value
 encode model = 
         model.jobs
             |> Enco.list (\job -> encodeJob job)
-
 
 decodeTask : Deco.Decoder Task
 decodeTask =
@@ -261,7 +295,7 @@ decode str =
            Ok jobs ->  
                 jobs
                     |> List.map (\j -> Job j.id j.name (Maybe.withDefault "" j.desc) j.tasks Simple Nothing)
-                    |> Model Modal.hidden Nothing count
+                    |> Model Modal.hidden Nothing count initSort
                     |> Just
            Err _ -> Nothing
         
@@ -343,7 +377,8 @@ viewSimpleJob job =
 
 viewJob: Job -> Html Msg
 viewJob job =
-    Card.config [ Card.outlineSecondary ]
+    Card.config [ Card.outlineSecondary,
+                  Card.align Text.alignSmLeft ]
        |> Card.headerH4 [] [ text job.name ]
        |> Card.block []
            [ Block.custom <| 
@@ -363,27 +398,78 @@ viewJobs jobs =
         (List.map viewJob jobs)
 
 
+viewTitle: String -> Int -> OrderBy -> Html Msg
+viewTitle title col sort = 
+
+    let
+        id = ById orderById
+        name = ByName orderByName
+        prog = ByCompetion orderByCompletion
+
+        isOn = \order -> sort == order
+
+        firstColor = 
+            if isOn id then
+                Button.primary
+            else
+                Button.secondary
+
+        secondColor = 
+            if isOn name then
+                Button.primary
+            else
+                Button.secondary
+
+        thirdColor = 
+            if isOn prog then
+                Button.primary
+            else
+                Button.secondary
+    in
+        div []
+            [ Html.h2 [] [text title]
+            , Button.button [ firstColor
+                            , Button.small
+                            , Button.onClick (SortBy col id)
+                            ] 
+                [ text "fecha"]
+            , Button.button [ secondColor 
+                            , Button.small
+                            , Button.onClick (SortBy col name)
+                            ] 
+                [ text "nombre"]
+            , Button.button [ thirdColor
+                            , Button.small
+                            , Button.onClick (SortBy col prog)
+                            ] 
+                [ text "progreso"]
+            ]
+
+
 viewGrid: Model -> Html Msg
 viewGrid model = 
   Grid.container [] 
     [ Grid.row []
-        [ Grid.col [] 
-            [ Html.h2 [] [text "Por empezar"]
+        [ Grid.col [ Col.textAlign Text.alignXsCenter ] 
+            [ viewTitle "Por empezar" 0 (get 0 model.sort)
             , model.jobs 
                 |> List.filter (\job -> (computeCompletness job.tasks == 0.0))
+                |> sortBy  (get 0 model.sort)
                 |> viewJobs
             ]
-        , Grid.col [] 
-            [ Html.h2 [] [text "En progreso"]
+        , Grid.col [ Col.textAlign Text.alignXsCenter ] 
+            [ viewTitle "En progreso" 1 (get 1 model.sort)
             , model.jobs 
                 |> List.filter (\job -> Tools.inExclusiveRange (computeCompletness job.tasks) (0,100))
+                |> sortBy (get 1 model.sort)
                 |> viewJobs
 
             ]
-        , Grid.col [] 
-            [ Html.h2 [] [text "Terminado"]
+        , Grid.col [ Col.textAlign Text.alignXsCenter ] 
+            [ viewTitle "Terminado" 2 (get 2 model.sort)
             , model.jobs 
                 |> List.filter (\job -> (computeCompletness job.tasks == 100.0))
+                |> sortBy (get 2 model.sort)
                 |> viewJobs
             ]
         ]
@@ -445,6 +531,7 @@ viewNewModal model =
 --   make an app
 
 main = Browser.sandbox { init = init, update = update, view = viewStandAlone }
+
 
 viewStandAlone: Model -> Html Msg
 viewStandAlone model = 
