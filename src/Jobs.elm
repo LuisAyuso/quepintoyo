@@ -59,7 +59,9 @@ type alias JobId = Int
 type alias Job = 
     { id: JobId
     , name: String
+    , desc: String
     , tasks: List Task
+    -- data for manipulating, not saved
     , view: ViewKind
     , editing: Maybe (List Task)
     }
@@ -110,14 +112,18 @@ type alias Model =
 type Msg = Noop 
 
         -- create job
-         | CreateJob 
-         | ChangeName String
-         | DoneCreating Job
-         | CancelCreating
+        | CreateJob 
+        | ChangeName String
+        | ChangeDesc String
+        | DoneCreating Job
+        | CancelCreating
+
+        -- edit job
+        | EditJob JobId
 
         -- update tasks job
-         | UpdateJob JobId ViewKind
-         | UpdateTask JobId String Bool
+        | UpdateJob JobId ViewKind
+        | UpdateTask JobId String Bool
 
 
 update: Msg -> Model -> Model
@@ -129,12 +135,17 @@ update msg model =
         CreateJob -> 
             { model | 
                 create = Modal.shown,
-                creating = Just (Job model.nextId "" initTasks Simple Nothing)
+                creating = Just (Job model.nextId "" "" initTasks Simple Nothing)
             }
 
         ChangeName newname -> 
             case model.creating of
-                Just job -> { model | creating = Just (Job job.id newname initTasks Simple Nothing)}
+                Just job -> { model | creating = Just (Job job.id newname "" job.tasks Simple Nothing)}
+                Nothing -> model
+
+        ChangeDesc newdesc -> 
+            case model.creating of
+                Just job -> { model | creating = Just (Job job.id job.name newdesc job.tasks Simple Nothing)}
                 Nothing -> model
 
         DoneCreating newjob -> 
@@ -149,6 +160,8 @@ update msg model =
                 }
 
         CancelCreating -> { model | create = Modal.hidden }
+
+        EditJob jobId -> model
 
         UpdateJob jobId viewKind -> 
             let 
@@ -196,6 +209,7 @@ encodeJob: Job -> Enco.Value
 encodeJob job = Enco.object 
     [ ("id", Enco.int job.id ) 
     , ("name", Enco.string job.name ) 
+    , ("desc", Enco.string job.desc ) 
     , ("tasks",
         job.tasks |> Enco.list (\task -> encodeTask task)
       )
@@ -216,14 +230,16 @@ decodeTask =
 type alias TmpJob = 
     { id: JobId
     , name: String
+    , desc: Maybe String
     , tasks: List Task
     }
 
 decodeJob : Deco.Decoder TmpJob
 decodeJob =
-  map3 TmpJob
+  map4 TmpJob
       (Deco.field "id" Deco.int)
       (Deco.field "name" Deco.string)
+      (Deco.maybe <| Deco.field "desc" Deco.string)
       (Deco.field "tasks" (Deco.list decodeTask))
 
 decode: String -> Maybe Model
@@ -244,7 +260,7 @@ decode str =
        case tmpdeco of 
            Ok jobs ->  
                 jobs
-                    |> List.map (\j -> Job j.id j.name j.tasks Simple Nothing)
+                    |> List.map (\j -> Job j.id j.name (Maybe.withDefault "" j.desc) j.tasks Simple Nothing)
                     |> Model Modal.hidden Nothing count
                     |> Just
            Err _ -> Nothing
@@ -287,7 +303,8 @@ viewExtendedJob job =
                 Just t -> t
     in
         Form.form []
-        [ Form.group []
+        [ text job.desc
+        , Form.group []
                 (List.map viewTask (matchTask2Jobs tasks job.id) )
         , Progress.progress
                 [ Progress.info
@@ -299,6 +316,12 @@ viewExtendedJob job =
             , Button.onClick (UpdateJob job.id Simple) 
             ] 
             [ text "Guardar" 
+            ]
+        , Button.button 
+            [ Button.secondary
+            , Button.onClick (EditJob job.id) 
+            ] 
+            [ text "Editar" 
             ]
         ]
 
@@ -345,20 +368,20 @@ viewGrid model =
   Grid.container [] 
     [ Grid.row []
         [ Grid.col [] 
-            [ text "Por empezar"
+            [ Html.h2 [] [text "Por empezar"]
             , model.jobs 
                 |> List.filter (\job -> (computeCompletness job.tasks == 0.0))
                 |> viewJobs
             ]
         , Grid.col [] 
-            [ text "En progreso"
+            [ Html.h2 [] [text "En progreso"]
             , model.jobs 
                 |> List.filter (\job -> Tools.inExclusiveRange (computeCompletness job.tasks) (0,100))
                 |> viewJobs
 
             ]
         , Grid.col [] 
-            [ text "Terminado"
+            [ Html.h2 [] [text "Terminado"]
             , model.jobs 
                 |> List.filter (\job -> (computeCompletness job.tasks == 100.0))
                 |> viewJobs
@@ -366,14 +389,14 @@ viewGrid model =
         ]
     ]
 
+
 viewNewButton: Model -> Html Msg
 viewNewButton model = 
-    div []
-    [ Button.button [ Button.primary
+    Button.button [ Button.primary
                     , Button.onClick CreateJob
                     ] 
         [ text "Hacer algo nuevo"]
-    ] 
+
 
 viewNewModal: Model -> Html Msg
 viewNewModal model =
@@ -382,20 +405,26 @@ viewNewModal model =
 
         Just job -> 
             Modal.config (DoneCreating job)
-                |> Modal.small
+                |> Modal.large
                 |> Modal.hideOnBackdropClick True
                 |> Modal.h3 [] [ text "Nuevo Trabajo" ]
                 |> Modal.body [] 
-                    [ p [] 
-                        [ InputGroup.config
-                            (InputGroup.text [ Input.onInput ChangeName])
-                            |> InputGroup.predecessors
-                                [ InputGroup.span [] 
-                                    [ text "Nombre:" 
-                                    ]
+                    [ InputGroup.config
+                        (InputGroup.text [ Input.onInput ChangeName])
+                        |> InputGroup.predecessors
+                            [ InputGroup.span [] 
+                                [ text "Nombre:" 
                                 ]
-                            |> InputGroup.view
-                        ]
+                            ]
+                        |> InputGroup.view
+                    , InputGroup.config
+                        (InputGroup.text [ Input.onInput ChangeDesc])
+                        |> InputGroup.predecessors
+                            [ InputGroup.span [] 
+                                [ text "Descripción:" 
+                                ]
+                            ]
+                        |> InputGroup.view
                     ]
                 |> Modal.footer []
                     [ Button.button

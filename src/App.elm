@@ -79,9 +79,9 @@ json2str value = Enco.encode 2 value
 view: Model -> Html Msg
 view model =
     div []
-    [ Html.map  (\msg -> Jobs msg)  (Jobs.viewGrid model.jobs)
+    [ Html.map  (\msg -> Jobs msg)  (Jobs.viewGrid      model.jobs)
     , Html.map  (\msg -> Jobs msg)  (Jobs.viewNewButton model.jobs)
-    , Html.map  (\msg -> Jobs msg)  (Jobs.viewNewModal model.jobs)
+    , Html.map  (\msg -> Jobs msg)  (Jobs.viewNewModal  model.jobs)
     , Button.button [ Button.secondary
                     , Button.onClick SaveAll
                     ] 
