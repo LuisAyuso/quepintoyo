@@ -34,7 +34,7 @@ import Json.Decode as Deco exposing (..)
 import Tools exposing(..)
 
 init: Model
-init = Model Modal.hidden Nothing 0 initSort []
+init = Model Modal.hidden None 0 initSort []
      -- [ Job 1 "massive darkness" initTasks Simple Nothing
      -- , Job 2 "star trek" initTasks Simple Nothing ]
 
@@ -101,6 +101,21 @@ updateTask id taskName toggle jobs =
     in
         (List.map foreachjob jobs)
 
+getJob: JobId -> List Job -> Maybe Job
+getJob id jobs = 
+    jobs |> List.filter (\j -> j.id == id) |> List.head
+
+setJob:  Job -> List Job -> List Job
+setJob newJob jobs = 
+    let 
+        replace = \job ->
+            if job.id == newJob.id then
+                newJob
+            else
+                job 
+    in
+        jobs |> List.map replace
+
 -- =================================================================
 -- =================================================================
 
@@ -129,9 +144,14 @@ type OrderBy = ByName (Job -> String)
 -- =================================================================
 -- =================================================================
 
+type ModalMode = None
+            | Create Job
+            | Edit Job
+
+
 type alias Model = 
   { create: Modal.Visibility
-  , creating: Maybe Job
+  , creating: ModalMode 
   , nextId: JobId
   , sort: (OrderBy, OrderBy, OrderBy)
   , jobs: List Job
@@ -139,15 +159,13 @@ type alias Model =
 
 type Msg = Noop 
 
-        -- create job
+        -- create/edit job
         | CreateJob 
+        | EditJob JobId
         | ChangeName String
         | ChangeDesc String
-        | DoneCreating Job
+        | DoneCreating 
         | CancelCreating
-
-        -- edit job
-        | EditJob JobId
 
         -- update tasks job
         | UpdateJob JobId ViewKind
@@ -166,33 +184,48 @@ update msg model =
         CreateJob -> 
             { model | 
                 create = Modal.shown,
-                creating = Just (Job model.nextId "" "" initTasks Simple Nothing)
+                creating = Create (Job model.nextId "" "" initTasks Simple Nothing)
             }
 
         ChangeName newname -> 
             case model.creating of
-                Just job -> { model | creating = Just (Job job.id newname "" job.tasks Simple Nothing)}
-                Nothing -> model
+                Create job -> { model | creating = Create (Job job.id newname job.desc job.tasks Simple Nothing)}
+                Edit job -> { model | creating = Edit (Job job.id newname job.desc job.tasks Simple Nothing)}
+                None -> model
 
         ChangeDesc newdesc -> 
             case model.creating of
-                Just job -> { model | creating = Just (Job job.id job.name newdesc job.tasks Simple Nothing)}
-                Nothing -> model
+                Create job -> { model | creating = Create (Job job.id job.name newdesc job.tasks Simple Nothing)}
+                Edit job -> { model | creating = Edit (Job job.id job.name newdesc job.tasks Simple Nothing)}
+                None -> model
 
-        DoneCreating newjob -> 
-            let
-                newJobs = model.jobs ++ [ newjob ]
-            in
-                { model | 
-                    create = Modal.hidden,
-                    creating = Nothing,
-                    nextId = model.nextId + 1,
-                    jobs = newJobs
-                }
+        DoneCreating -> 
+            case model.creating of
+                None -> model
+                Create newjob ->
+                    { model | 
+                        create = Modal.hidden,
+                        creating = None,
+                        nextId = model.nextId + 1,
+                        jobs = model.jobs ++ [ newjob ]
+                    }
+                Edit newjob -> 
+                    { model |
+                        create = Modal.hidden,
+                        creating = None,
+                        jobs = setJob newjob model.jobs
+                    }
 
         CancelCreating -> { model | create = Modal.hidden }
 
-        EditJob jobId -> model
+        EditJob jobId -> 
+            case getJob jobId model.jobs of
+                Nothing -> model
+                Just job -> 
+                        { model | 
+                            create = Modal.shown,
+                            creating = Edit job
+                        }
 
         UpdateJob jobId viewKind -> 
             let 
@@ -240,6 +273,7 @@ encodeTask task = Enco.object
     , ("done", Enco.bool task.done)
     ]
 
+
 encodeJob: Job -> Enco.Value
 encodeJob job = Enco.object 
     [ ("id", Enco.int job.id ) 
@@ -250,16 +284,19 @@ encodeJob job = Enco.object
       )
     ]
 
+
 encode: Model -> Enco.Value
 encode model = 
         model.jobs
             |> Enco.list (\job -> encodeJob job)
+
 
 decodeTask : Deco.Decoder Task
 decodeTask =
   map2 Task
       (Deco.field "done" Deco.bool)
       (Deco.field "name" Deco.string)
+
 
 type alias TmpJob = 
     { id: JobId
@@ -268,6 +305,7 @@ type alias TmpJob =
     , tasks: List Task
     }
 
+
 decodeJob : Deco.Decoder TmpJob
 decodeJob =
   map4 TmpJob
@@ -275,6 +313,7 @@ decodeJob =
       (Deco.field "name" Deco.string)
       (Deco.maybe <| Deco.field "desc" Deco.string)
       (Deco.field "tasks" (Deco.list decodeTask))
+
 
 decode: String -> Maybe Model
 decode str = 
@@ -295,7 +334,7 @@ decode str =
            Ok jobs ->  
                 jobs
                     |> List.map (\j -> Job j.id j.name (Maybe.withDefault "" j.desc) j.tasks Simple Nothing)
-                    |> Model Modal.hidden Nothing count initSort
+                    |> Model Modal.hidden None count initSort
                     |> Just
            Err _ -> Nothing
         
@@ -400,7 +439,6 @@ viewJobs jobs =
 
 viewTitle: String -> Int -> OrderBy -> Html Msg
 viewTitle title col sort = 
-
     let
         id = ById orderById
         name = ByName orderByName
@@ -486,17 +524,18 @@ viewNewButton model =
 
 viewNewModal: Model -> Html Msg
 viewNewModal model =
-    case model.creating of
-        Nothing -> div [][]
-
-        Just job -> 
-            Modal.config (DoneCreating job)
+    let 
+        modalDialog =  \title job ->
+            Modal.config (DoneCreating)
                 |> Modal.large
                 |> Modal.hideOnBackdropClick True
-                |> Modal.h3 [] [ text "Nuevo Trabajo" ]
+                |> Modal.h3 [] [ text title ]
                 |> Modal.body [] 
                     [ InputGroup.config
-                        (InputGroup.text [ Input.onInput ChangeName])
+                        (InputGroup.text 
+                            [ Input.placeholder job.name
+                            , Input.onInput ChangeName
+                            ])
                         |> InputGroup.predecessors
                             [ InputGroup.span [] 
                                 [ text "Nombre:" 
@@ -504,7 +543,10 @@ viewNewModal model =
                             ]
                         |> InputGroup.view
                     , InputGroup.config
-                        (InputGroup.text [ Input.onInput ChangeDesc])
+                        (InputGroup.text 
+                            [ Input.placeholder job.desc
+                            , Input.onInput ChangeDesc
+                            ])
                         |> InputGroup.predecessors
                             [ InputGroup.span [] 
                                 [ text "Descripción:" 
@@ -515,7 +557,7 @@ viewNewModal model =
                 |> Modal.footer []
                     [ Button.button
                         [ Button.outlinePrimary
-                        , Button.attrs [ onClick (DoneCreating job) ]
+                        , Button.attrs [ onClick (DoneCreating) ]
                         ]
                         [ text "Listo" ]
                     , Button.button
@@ -525,6 +567,11 @@ viewNewModal model =
                         [ text "Cancelar" ]
                     ]
                 |> Modal.view model.create
+    in
+        case model.creating of
+            None -> div [][]
+            Create job -> modalDialog "Nuevo Trabajo" job
+            Edit job   -> modalDialog "Editar Trabajo" job
 
 
 -- ============================================

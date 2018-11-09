@@ -65,7 +65,7 @@ update msg model =
                 in
                 ( { model | jobs = newjobs }
                 , case a of
-                    Jobs.DoneCreating _ -> Cmd.batch [ saveCmd newjobs ]
+                    Jobs.DoneCreating -> Cmd.batch [ saveCmd newjobs ]
                     Jobs.UpdateJob _ _ -> Cmd.batch [ saveCmd newjobs ]
                     _ ->  Cmd.batch []
                 )

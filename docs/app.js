@@ -2643,7 +2643,7 @@ var _VirtualDom_mapEventTuple = F2(function(func, tuple)
 var _VirtualDom_mapEventRecord = F2(function(func, record)
 {
 	return {
-		z: func(record.z),
+		A: func(record.A),
 		cs: record.cs,
 		cn: record.cn
 	}
@@ -2913,7 +2913,7 @@ function _VirtualDom_makeCallback(eventNode, initialHandler)
 		// 3 = Custom
 
 		var value = result.a;
-		var message = !tag ? value : tag < 3 ? value.a : value.z;
+		var message = !tag ? value : tag < 3 ? value.a : value.A;
 		var stopPropagation = tag == 1 ? value.b : tag == 3 && value.cs;
 		var currentEventNode = (
 			stopPropagation && event.stopPropagation(),
@@ -4173,10 +4173,10 @@ function _Browser_getViewport()
 	return {
 		da: _Browser_getScene(),
 		dm: {
-			e: _Browser_window.pageXOffset,
-			f: _Browser_window.pageYOffset,
-			af: _Browser_doc.documentElement.clientWidth,
-			U: _Browser_doc.documentElement.clientHeight
+			g: _Browser_window.pageXOffset,
+			h: _Browser_window.pageYOffset,
+			ah: _Browser_doc.documentElement.clientWidth,
+			W: _Browser_doc.documentElement.clientHeight
 		}
 	};
 }
@@ -4186,8 +4186,8 @@ function _Browser_getScene()
 	var body = _Browser_doc.body;
 	var elem = _Browser_doc.documentElement;
 	return {
-		af: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
-		U: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
+		ah: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
+		W: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
 	};
 }
 
@@ -4211,14 +4211,14 @@ function _Browser_getViewportOf(id)
 	{
 		return {
 			da: {
-				af: node.scrollWidth,
-				U: node.scrollHeight
+				ah: node.scrollWidth,
+				W: node.scrollHeight
 			},
 			dm: {
-				e: node.scrollLeft,
-				f: node.scrollTop,
-				af: node.clientWidth,
-				U: node.clientHeight
+				g: node.scrollLeft,
+				h: node.scrollTop,
+				ah: node.clientWidth,
+				W: node.clientHeight
 			}
 		};
 	});
@@ -4250,16 +4250,16 @@ function _Browser_getElement(id)
 		return {
 			da: _Browser_getScene(),
 			dm: {
-				e: x,
-				f: y,
-				af: _Browser_doc.documentElement.clientWidth,
-				U: _Browser_doc.documentElement.clientHeight
+				g: x,
+				h: y,
+				ah: _Browser_doc.documentElement.clientWidth,
+				W: _Browser_doc.documentElement.clientHeight
 			},
 			du: {
-				e: x + rect.left,
-				f: y + rect.top,
-				af: rect.width,
-				U: rect.height
+				g: x + rect.left,
+				h: y + rect.top,
+				ah: rect.width,
+				W: rect.height
 			}
 		};
 	});
@@ -4296,20 +4296,21 @@ function _Browser_load(url)
 }
 var author$project$Jobs$Job = F6(
 	function (id, name, desc, tasks, view, editing) {
-		return {ak: desc, H: editing, h: id, q: name, m: tasks, aE: view};
+		return {y: desc, J: editing, a: id, k: name, i: tasks, aE: view};
 	});
 var author$project$Jobs$Model = F5(
 	function (create, creating, nextId, sort, jobs) {
-		return {aj: create, x: creating, k: jobs, bk: nextId, u: sort};
+		return {F: create, m: creating, f: jobs, bk: nextId, v: sort};
 	});
+var author$project$Jobs$None = {$: 0};
 var author$project$Jobs$Simple = 0;
 var author$project$Jobs$TmpJob = F4(
 	function (id, name, desc, tasks) {
-		return {ak: desc, h: id, q: name, m: tasks};
+		return {y: desc, a: id, k: name, i: tasks};
 	});
 var author$project$Jobs$Task = F2(
 	function (done, name) {
-		return {al: done, q: name};
+		return {al: done, k: name};
 	});
 var elm$core$Array$branchFactor = 32;
 var elm$core$Array$Array_elm_builtin = F4(
@@ -4499,25 +4500,25 @@ var elm$core$Basics$sub = _Basics_sub;
 var elm$core$Elm$JsArray$length = _JsArray_length;
 var elm$core$Array$builderToArray = F2(
 	function (reverseNodeList, builder) {
-		if (!builder.a) {
+		if (!builder.b) {
 			return A4(
 				elm$core$Array$Array_elm_builtin,
-				elm$core$Elm$JsArray$length(builder.c),
+				elm$core$Elm$JsArray$length(builder.d),
 				elm$core$Array$shiftStep,
 				elm$core$Elm$JsArray$empty,
-				builder.c);
+				builder.d);
 		} else {
-			var treeLen = builder.a * elm$core$Array$branchFactor;
+			var treeLen = builder.b * elm$core$Array$branchFactor;
 			var depth = elm$core$Basics$floor(
 				A2(elm$core$Basics$logBase, elm$core$Array$branchFactor, treeLen - 1));
-			var correctNodeList = reverseNodeList ? elm$core$List$reverse(builder.d) : builder.d;
-			var tree = A2(elm$core$Array$treeFromBuilder, correctNodeList, builder.a);
+			var correctNodeList = reverseNodeList ? elm$core$List$reverse(builder.e) : builder.e;
+			var tree = A2(elm$core$Array$treeFromBuilder, correctNodeList, builder.b);
 			return A4(
 				elm$core$Array$Array_elm_builtin,
-				elm$core$Elm$JsArray$length(builder.c) + treeLen,
+				elm$core$Elm$JsArray$length(builder.d) + treeLen,
 				A2(elm$core$Basics$max, 5, depth * elm$core$Array$shiftStep),
 				tree,
-				builder.c);
+				builder.d);
 		}
 	});
 var elm$core$Basics$False = 1;
@@ -4532,7 +4533,7 @@ var elm$core$Array$initializeHelp = F5(
 				return A2(
 					elm$core$Array$builderToArray,
 					false,
-					{d: nodeList, a: (len / elm$core$Array$branchFactor) | 0, c: tail});
+					{e: nodeList, b: (len / elm$core$Array$branchFactor) | 0, d: tail});
 			} else {
 				var leaf = elm$core$Array$Leaf(
 					A3(elm$core$Elm$JsArray$initialize, elm$core$Array$branchFactor, fromIndex, fn));
@@ -4824,7 +4825,7 @@ var author$project$Jobs$ById = function (a) {
 	return {$: 1, a: a};
 };
 var author$project$Jobs$orderById = function (job) {
-	return job.h;
+	return job.a;
 };
 var author$project$Jobs$initSort = _Utils_Tuple3(
 	author$project$Jobs$ById(author$project$Jobs$orderById),
@@ -4933,7 +4934,7 @@ var author$project$Jobs$decode = function (str) {
 				A2(
 					elm$core$List$map,
 					function (j) {
-						return j.h;
+						return j.a;
 					},
 					jobs));
 		} else {
@@ -4954,7 +4955,7 @@ var author$project$Jobs$decode = function (str) {
 			A5(
 				author$project$Jobs$Model,
 				rundis$elm_bootstrap$Bootstrap$Modal$hidden,
-				elm$core$Maybe$Nothing,
+				author$project$Jobs$None,
 				count,
 				author$project$Jobs$initSort,
 				A2(
@@ -4962,10 +4963,10 @@ var author$project$Jobs$decode = function (str) {
 					function (j) {
 						return A6(
 							author$project$Jobs$Job,
-							j.h,
-							j.q,
-							A2(elm$core$Maybe$withDefault, '', j.ak),
-							j.m,
+							j.a,
+							j.k,
+							A2(elm$core$Maybe$withDefault, '', j.y),
+							j.i,
 							0,
 							elm$core$Maybe$Nothing);
 					},
@@ -4975,9 +4976,9 @@ var author$project$Jobs$decode = function (str) {
 	}
 };
 var author$project$Main$Model = function (jobs) {
-	return {k: jobs};
+	return {f: jobs};
 };
-var author$project$Jobs$init = A5(author$project$Jobs$Model, rundis$elm_bootstrap$Bootstrap$Modal$hidden, elm$core$Maybe$Nothing, 0, author$project$Jobs$initSort, _List_Nil);
+var author$project$Jobs$init = A5(author$project$Jobs$Model, rundis$elm_bootstrap$Bootstrap$Modal$hidden, author$project$Jobs$None, 0, author$project$Jobs$initSort, _List_Nil);
 var author$project$Main$emptyModel = author$project$Main$Model(author$project$Jobs$init);
 var elm$core$Platform$Cmd$batch = _Platform_batch;
 var author$project$Main$init = function (flags) {
@@ -5019,7 +5020,7 @@ var author$project$Jobs$encodeTask = function (task) {
 			[
 				_Utils_Tuple2(
 				'name',
-				elm$json$Json$Encode$string(task.q)),
+				elm$json$Json$Encode$string(task.k)),
 				_Utils_Tuple2(
 				'done',
 				elm$json$Json$Encode$bool(task.al))
@@ -5041,13 +5042,13 @@ var author$project$Jobs$encodeJob = function (job) {
 			[
 				_Utils_Tuple2(
 				'id',
-				elm$json$Json$Encode$int(job.h)),
+				elm$json$Json$Encode$int(job.a)),
 				_Utils_Tuple2(
 				'name',
-				elm$json$Json$Encode$string(job.q)),
+				elm$json$Json$Encode$string(job.k)),
 				_Utils_Tuple2(
 				'desc',
-				elm$json$Json$Encode$string(job.ak)),
+				elm$json$Json$Encode$string(job.y)),
 				_Utils_Tuple2(
 				'tasks',
 				A2(
@@ -5055,7 +5056,7 @@ var author$project$Jobs$encodeJob = function (job) {
 					function (task) {
 						return author$project$Jobs$encodeTask(task);
 					},
-					job.m))
+					job.i))
 			]));
 };
 var author$project$Jobs$encode = function (model) {
@@ -5064,8 +5065,44 @@ var author$project$Jobs$encode = function (model) {
 		function (job) {
 			return author$project$Jobs$encodeJob(job);
 		},
-		model.k);
+		model.f);
 };
+var author$project$Jobs$Create = function (a) {
+	return {$: 1, a: a};
+};
+var author$project$Jobs$Edit = function (a) {
+	return {$: 2, a: a};
+};
+var elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2(elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
+var elm$core$List$head = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return elm$core$Maybe$Just(x);
+	} else {
+		return elm$core$Maybe$Nothing;
+	}
+};
+var author$project$Jobs$getJob = F2(
+	function (id, jobs) {
+		return elm$core$List$head(
+			A2(
+				elm$core$List$filter,
+				function (j) {
+					return _Utils_eq(j.a, id);
+				},
+				jobs));
+	});
 var author$project$Jobs$initTasks = _List_fromArray(
 	[
 		A2(author$project$Jobs$Task, false, 'Montado'),
@@ -5082,22 +5119,29 @@ var author$project$Jobs$mapif = F3(
 		};
 		return A2(elm$core$List$map, f, list);
 	});
+var author$project$Jobs$setJob = F2(
+	function (newJob, jobs) {
+		var replace = function (job) {
+			return _Utils_eq(job.a, newJob.a) ? newJob : job;
+		};
+		return A2(elm$core$List$map, replace, jobs);
+	});
 var author$project$Jobs$updateTask = F4(
 	function (id, taskName, toggle, jobs) {
 		var foreachtask = function (task) {
-			return _Utils_eq(taskName, task.q) ? _Utils_update(
+			return _Utils_eq(taskName, task.k) ? _Utils_update(
 				task,
 				{al: toggle}) : task;
 		};
 		var foreachjob = function (job) {
-			if (_Utils_eq(id, job.h)) {
-				var _n0 = job.H;
+			if (_Utils_eq(id, job.a)) {
+				var _n0 = job.J;
 				if (!_n0.$) {
 					var tasks = _n0.a;
 					return _Utils_update(
 						job,
 						{
-							H: elm$core$Maybe$Just(
+							J: elm$core$Maybe$Just(
 								A2(elm$core$List$map, foreachtask, tasks))
 						});
 				} else {
@@ -5127,54 +5171,102 @@ var author$project$Jobs$update = F2(
 				return _Utils_update(
 					model,
 					{
-						aj: rundis$elm_bootstrap$Bootstrap$Modal$shown,
-						x: elm$core$Maybe$Just(
+						F: rundis$elm_bootstrap$Bootstrap$Modal$shown,
+						m: author$project$Jobs$Create(
 							A6(author$project$Jobs$Job, model.bk, '', '', author$project$Jobs$initTasks, 0, elm$core$Maybe$Nothing))
 					});
-			case 2:
-				var newname = msg.a;
-				var _n1 = model.x;
-				if (!_n1.$) {
-					var job = _n1.a;
-					return _Utils_update(
-						model,
-						{
-							x: elm$core$Maybe$Just(
-								A6(author$project$Jobs$Job, job.h, newname, '', job.m, 0, elm$core$Maybe$Nothing))
-						});
-				} else {
-					return model;
-				}
 			case 3:
-				var newdesc = msg.a;
-				var _n2 = model.x;
-				if (!_n2.$) {
-					var job = _n2.a;
-					return _Utils_update(
-						model,
-						{
-							x: elm$core$Maybe$Just(
-								A6(author$project$Jobs$Job, job.h, job.q, newdesc, job.m, 0, elm$core$Maybe$Nothing))
-						});
-				} else {
-					return model;
+				var newname = msg.a;
+				var _n1 = model.m;
+				switch (_n1.$) {
+					case 1:
+						var job = _n1.a;
+						return _Utils_update(
+							model,
+							{
+								m: author$project$Jobs$Create(
+									A6(author$project$Jobs$Job, job.a, newname, job.y, job.i, 0, elm$core$Maybe$Nothing))
+							});
+					case 2:
+						var job = _n1.a;
+						return _Utils_update(
+							model,
+							{
+								m: author$project$Jobs$Edit(
+									A6(author$project$Jobs$Job, job.a, newname, job.y, job.i, 0, elm$core$Maybe$Nothing))
+							});
+					default:
+						return model;
 				}
 			case 4:
-				var newjob = msg.a;
-				var newJobs = _Utils_ap(
-					model.k,
-					_List_fromArray(
-						[newjob]));
-				return _Utils_update(
-					model,
-					{aj: rundis$elm_bootstrap$Bootstrap$Modal$hidden, x: elm$core$Maybe$Nothing, k: newJobs, bk: model.bk + 1});
+				var newdesc = msg.a;
+				var _n2 = model.m;
+				switch (_n2.$) {
+					case 1:
+						var job = _n2.a;
+						return _Utils_update(
+							model,
+							{
+								m: author$project$Jobs$Create(
+									A6(author$project$Jobs$Job, job.a, job.k, newdesc, job.i, 0, elm$core$Maybe$Nothing))
+							});
+					case 2:
+						var job = _n2.a;
+						return _Utils_update(
+							model,
+							{
+								m: author$project$Jobs$Edit(
+									A6(author$project$Jobs$Job, job.a, job.k, newdesc, job.i, 0, elm$core$Maybe$Nothing))
+							});
+					default:
+						return model;
+				}
 			case 5:
+				var _n3 = model.m;
+				switch (_n3.$) {
+					case 0:
+						return model;
+					case 1:
+						var newjob = _n3.a;
+						return _Utils_update(
+							model,
+							{
+								F: rundis$elm_bootstrap$Bootstrap$Modal$hidden,
+								m: author$project$Jobs$None,
+								f: _Utils_ap(
+									model.f,
+									_List_fromArray(
+										[newjob])),
+								bk: model.bk + 1
+							});
+					default:
+						var newjob = _n3.a;
+						return _Utils_update(
+							model,
+							{
+								F: rundis$elm_bootstrap$Bootstrap$Modal$hidden,
+								m: author$project$Jobs$None,
+								f: A2(author$project$Jobs$setJob, newjob, model.f)
+							});
+				}
+			case 6:
 				return _Utils_update(
 					model,
-					{aj: rundis$elm_bootstrap$Bootstrap$Modal$hidden});
-			case 6:
+					{F: rundis$elm_bootstrap$Bootstrap$Modal$hidden});
+			case 2:
 				var jobId = msg.a;
-				return model;
+				var _n4 = A2(author$project$Jobs$getJob, jobId, model.f);
+				if (_n4.$ === 1) {
+					return model;
+				} else {
+					var job = _n4.a;
+					return _Utils_update(
+						model,
+						{
+							F: rundis$elm_bootstrap$Bootstrap$Modal$shown,
+							m: author$project$Jobs$Edit(job)
+						});
+				}
 			case 7:
 				var jobId = msg.a;
 				var viewKind = msg.b;
@@ -5182,20 +5274,20 @@ var author$project$Jobs$update = F2(
 					return _Utils_update(
 						job,
 						{
-							H: elm$core$Maybe$Just(job.m),
+							J: elm$core$Maybe$Just(job.i),
 							aE: viewKind
 						});
 				};
 				var cond = function (job) {
-					return _Utils_eq(job.h, jobId);
+					return _Utils_eq(job.a, jobId);
 				};
 				var commitchanges = function (job) {
-					var _n4 = job.H;
-					if (!_n4.$) {
-						var l = _n4.a;
+					var _n6 = job.J;
+					if (!_n6.$) {
+						var l = _n6.a;
 						return _Utils_update(
 							job,
-							{H: elm$core$Maybe$Nothing, m: l, aE: viewKind});
+							{J: elm$core$Maybe$Nothing, i: l, aE: viewKind});
 					} else {
 						return job;
 					}
@@ -5204,13 +5296,13 @@ var author$project$Jobs$update = F2(
 					return _Utils_update(
 						model,
 						{
-							k: A3(author$project$Jobs$mapif, cond, extend, model.k)
+							f: A3(author$project$Jobs$mapif, cond, extend, model.f)
 						});
 				} else {
 					return _Utils_update(
 						model,
 						{
-							k: A3(author$project$Jobs$mapif, cond, commitchanges, model.k)
+							f: A3(author$project$Jobs$mapif, cond, commitchanges, model.f)
 						});
 				}
 			case 8:
@@ -5220,7 +5312,7 @@ var author$project$Jobs$update = F2(
 				return _Utils_update(
 					model,
 					{
-						k: A4(author$project$Jobs$updateTask, jobId, taskName, enabled, model.k)
+						f: A4(author$project$Jobs$updateTask, jobId, taskName, enabled, model.f)
 					});
 			default:
 				var col = msg.a;
@@ -5228,7 +5320,7 @@ var author$project$Jobs$update = F2(
 				return _Utils_update(
 					model,
 					{
-						u: A3(author$project$Tools$set, col, model.u, by)
+						v: A3(author$project$Tools$set, col, model.v, by)
 					});
 		}
 	});
@@ -5260,7 +5352,7 @@ var author$project$Main$update = F2(
 					elm$core$Platform$Cmd$batch(
 						_List_fromArray(
 							[
-								saveCmd(model.k)
+								saveCmd(model.f)
 							])));
 			case 2:
 				return _Utils_Tuple2(
@@ -5272,14 +5364,14 @@ var author$project$Main$update = F2(
 							])));
 			default:
 				var a = msg.a;
-				var newjobs = A2(author$project$Jobs$update, a, model.k);
+				var newjobs = A2(author$project$Jobs$update, a, model.f);
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{k: newjobs}),
+						{f: newjobs}),
 					function () {
 						switch (a.$) {
-							case 4:
+							case 5:
 								return elm$core$Platform$Cmd$batch(
 									_List_fromArray(
 										[
@@ -5320,7 +5412,7 @@ var author$project$Jobs$sortBy = F2(
 		}
 	});
 var author$project$Jobs$EditJob = function (a) {
-	return {$: 6, a: a};
+	return {$: 2, a: a};
 };
 var author$project$Jobs$UpdateJob = F2(
 	function (a, b) {
@@ -5365,17 +5457,6 @@ var elm$html$Html$input = _VirtualDom_node('input');
 var elm$html$Html$label = _VirtualDom_node('label');
 var elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var elm$html$Html$text = elm$virtual_dom$VirtualDom$text;
-var elm$core$List$filter = F2(
-	function (isGood, list) {
-		return A3(
-			elm$core$List$foldr,
-			F2(
-				function (x, xs) {
-					return isGood(x) ? A2(elm$core$List$cons, x, xs) : xs;
-				}),
-			_List_Nil,
-			list);
-	});
 var elm$core$Tuple$second = function (_n0) {
 	var y = _n0.b;
 	return y;
@@ -5407,13 +5488,13 @@ var rundis$elm_bootstrap$Bootstrap$Form$Checkbox$applyModifier = F2(
 				return _Utils_update(
 					options,
 					{
-						h: elm$core$Maybe$Just(val)
+						a: elm$core$Maybe$Just(val)
 					});
 			case 1:
 				var val = modifier.a;
 				return _Utils_update(
 					options,
-					{b: val});
+					{c: val});
 			case 2:
 				return _Utils_update(
 					options,
@@ -5428,7 +5509,7 @@ var rundis$elm_bootstrap$Bootstrap$Form$Checkbox$applyModifier = F2(
 			case 4:
 				return _Utils_update(
 					options,
-					{o: true});
+					{q: true});
 			case 5:
 				var val = modifier.a;
 				return _Utils_update(
@@ -5451,7 +5532,7 @@ var rundis$elm_bootstrap$Bootstrap$Form$Checkbox$applyModifier = F2(
 		}
 	});
 var rundis$elm_bootstrap$Bootstrap$Form$Checkbox$Off = 1;
-var rundis$elm_bootstrap$Bootstrap$Form$Checkbox$defaultOptions = {aV: _List_Nil, o: false, a3: false, h: elm$core$Maybe$Nothing, ap: false, bs: elm$core$Maybe$Nothing, b: 1, b0: elm$core$Maybe$Nothing};
+var rundis$elm_bootstrap$Bootstrap$Form$Checkbox$defaultOptions = {aV: _List_Nil, q: false, a3: false, a: elm$core$Maybe$Nothing, ap: false, bs: elm$core$Maybe$Nothing, c: 1, b0: elm$core$Maybe$Nothing};
 var elm$core$List$maybeCons = F3(
 	function (f, mx, xs) {
 		var _n0 = f(mx);
@@ -5549,12 +5630,12 @@ var rundis$elm_bootstrap$Bootstrap$Form$Checkbox$toAttributes = function (option
 				elm$html$Html$Attributes$classList(
 				_List_fromArray(
 					[
-						_Utils_Tuple2('form-check-input', !options.o),
-						_Utils_Tuple2('custom-control-input', options.o)
+						_Utils_Tuple2('form-check-input', !options.q),
+						_Utils_Tuple2('custom-control-input', options.q)
 					])),
 				elm$html$Html$Attributes$type_('checkbox'),
 				elm$html$Html$Attributes$disabled(options.a3),
-				rundis$elm_bootstrap$Bootstrap$Form$Checkbox$stateAttribute(options.b)
+				rundis$elm_bootstrap$Bootstrap$Form$Checkbox$stateAttribute(options.c)
 			]),
 		_Utils_ap(
 			A2(
@@ -5563,7 +5644,7 @@ var rundis$elm_bootstrap$Bootstrap$Form$Checkbox$toAttributes = function (option
 				_List_fromArray(
 					[
 						A2(elm$core$Maybe$map, elm$html$Html$Events$onCheck, options.bs),
-						A2(elm$core$Maybe$map, elm$html$Html$Attributes$id, options.h)
+						A2(elm$core$Maybe$map, elm$html$Html$Attributes$id, options.a)
 					])),
 			_Utils_ap(
 				function () {
@@ -5591,11 +5672,11 @@ var rundis$elm_bootstrap$Bootstrap$Form$Checkbox$view = function (_n0) {
 				elm$html$Html$Attributes$classList(
 				_List_fromArray(
 					[
-						_Utils_Tuple2('form-check', !opts.o),
-						_Utils_Tuple2('form-check-inline', (!opts.o) && opts.ap),
-						_Utils_Tuple2('custom-control', opts.o),
-						_Utils_Tuple2('custom-checkbox', opts.o),
-						_Utils_Tuple2('custom-control-inline', opts.ap && opts.o)
+						_Utils_Tuple2('form-check', !opts.q),
+						_Utils_Tuple2('form-check-inline', (!opts.q) && opts.ap),
+						_Utils_Tuple2('custom-control', opts.q),
+						_Utils_Tuple2('custom-checkbox', opts.q),
+						_Utils_Tuple2('custom-control-inline', opts.ap && opts.q)
 					]))
 			]),
 		_List_fromArray(
@@ -5612,12 +5693,12 @@ var rundis$elm_bootstrap$Bootstrap$Form$Checkbox$view = function (_n0) {
 							elm$html$Html$Attributes$classList(
 							_List_fromArray(
 								[
-									_Utils_Tuple2('form-check-label', !opts.o),
-									_Utils_Tuple2('custom-control-label', opts.o)
+									_Utils_Tuple2('form-check-label', !opts.q),
+									_Utils_Tuple2('custom-control-label', opts.q)
 								]))
 						]),
 					function () {
-						var _n1 = opts.h;
+						var _n1 = opts.a;
 						if (!_n1.$) {
 							var v = _n1.a;
 							return _List_fromArray(
@@ -5662,9 +5743,9 @@ var author$project$Jobs$viewTask = function (_n0) {
 			[
 				rundis$elm_bootstrap$Bootstrap$Form$Checkbox$checked(task.al),
 				rundis$elm_bootstrap$Bootstrap$Form$Checkbox$onCheck(
-				A2(author$project$Jobs$UpdateTask, jobId, task.q))
+				A2(author$project$Jobs$UpdateTask, jobId, task.k))
 			]),
-		task.q);
+		task.k);
 };
 var elm$html$Html$br = _VirtualDom_node('br');
 var elm$html$Html$button = _VirtualDom_node('button');
@@ -5706,7 +5787,7 @@ var rundis$elm_bootstrap$Bootstrap$Internal$Button$applyModifier = F2(
 				return _Utils_update(
 					options,
 					{
-						w: elm$core$Maybe$Just(coloring)
+						x: elm$core$Maybe$Just(coloring)
 					});
 			case 2:
 				return _Utils_update(
@@ -5726,7 +5807,7 @@ var rundis$elm_bootstrap$Bootstrap$Internal$Button$applyModifier = F2(
 					});
 		}
 	});
-var rundis$elm_bootstrap$Bootstrap$Internal$Button$defaultOptions = {aV: _List_Nil, aX: false, w: elm$core$Maybe$Nothing, a3: false, bR: elm$core$Maybe$Nothing};
+var rundis$elm_bootstrap$Bootstrap$Internal$Button$defaultOptions = {aV: _List_Nil, aX: false, x: elm$core$Maybe$Nothing, a3: false, bR: elm$core$Maybe$Nothing};
 var rundis$elm_bootstrap$Bootstrap$Internal$Button$roleClass = function (role) {
 	switch (role) {
 		case 0:
@@ -5778,7 +5859,7 @@ var rundis$elm_bootstrap$Bootstrap$Internal$Button$buttonAttributes = function (
 			}(),
 			_Utils_ap(
 				function () {
-					var _n1 = options.w;
+					var _n1 = options.x;
 					if (!_n1.$) {
 						if (!_n1.a.$) {
 							var role = _n1.a.a;
@@ -5898,7 +5979,7 @@ var rundis$elm_bootstrap$Bootstrap$Progress$applyOption = F2(
 				var height_ = modifier.a;
 				return _Utils_update(
 					options,
-					{U: height_});
+					{W: height_});
 			case 2:
 				var label_ = modifier.a;
 				return _Utils_update(
@@ -5931,7 +6012,7 @@ var rundis$elm_bootstrap$Bootstrap$Progress$applyOption = F2(
 					{cw: attrs_});
 		}
 	});
-var rundis$elm_bootstrap$Bootstrap$Progress$defaultOptions = {aT: false, aV: _List_Nil, U: elm$core$Maybe$Nothing, cT: _List_Nil, bN: elm$core$Maybe$Nothing, ct: false, aD: 0, cw: _List_Nil};
+var rundis$elm_bootstrap$Bootstrap$Progress$defaultOptions = {aT: false, aV: _List_Nil, W: elm$core$Maybe$Nothing, cT: _List_Nil, bN: elm$core$Maybe$Nothing, ct: false, aD: 0, cw: _List_Nil};
 var elm$core$List$append = F2(
 	function (xs, ys) {
 		if (!ys.b) {
@@ -5988,7 +6069,7 @@ var rundis$elm_bootstrap$Bootstrap$Progress$toAttributes = function (_n0) {
 						]))
 				]),
 				function () {
-				var _n1 = options.U;
+				var _n1 = options.W;
 				if (!_n1.$) {
 					var height_ = _n1.a;
 					return _List_fromArray(
@@ -6047,7 +6128,7 @@ var rundis$elm_bootstrap$Bootstrap$Progress$value = function (val) {
 };
 var author$project$Jobs$viewExtendedJob = function (job) {
 	var tasks = function () {
-		var _n0 = job.H;
+		var _n0 = job.J;
 		if (_n0.$ === 1) {
 			return _List_Nil;
 		} else {
@@ -6060,14 +6141,14 @@ var author$project$Jobs$viewExtendedJob = function (job) {
 		_List_Nil,
 		_List_fromArray(
 			[
-				elm$html$Html$text(job.ak),
+				elm$html$Html$text(job.y),
 				A2(
 				rundis$elm_bootstrap$Bootstrap$Form$group,
 				_List_Nil,
 				A2(
 					elm$core$List$map,
 					author$project$Jobs$viewTask,
-					A2(author$project$Jobs$matchTask2Jobs, tasks, job.h))),
+					A2(author$project$Jobs$matchTask2Jobs, tasks, job.a))),
 				rundis$elm_bootstrap$Bootstrap$Progress$progress(
 				_List_fromArray(
 					[
@@ -6082,7 +6163,7 @@ var author$project$Jobs$viewExtendedJob = function (job) {
 					[
 						rundis$elm_bootstrap$Bootstrap$Button$primary,
 						rundis$elm_bootstrap$Bootstrap$Button$onClick(
-						A2(author$project$Jobs$UpdateJob, job.h, 0))
+						A2(author$project$Jobs$UpdateJob, job.a, 0))
 					]),
 				_List_fromArray(
 					[
@@ -6094,7 +6175,7 @@ var author$project$Jobs$viewExtendedJob = function (job) {
 					[
 						rundis$elm_bootstrap$Bootstrap$Button$secondary,
 						rundis$elm_bootstrap$Bootstrap$Button$onClick(
-						author$project$Jobs$EditJob(job.h))
+						author$project$Jobs$EditJob(job.a))
 					]),
 				_List_fromArray(
 					[
@@ -6114,7 +6195,7 @@ var author$project$Jobs$viewSimpleJob = function (job) {
 					[
 						rundis$elm_bootstrap$Bootstrap$Progress$info,
 						rundis$elm_bootstrap$Bootstrap$Progress$value(
-						author$project$Jobs$computeCompletness(job.m))
+						author$project$Jobs$computeCompletness(job.i))
 					])),
 				A2(
 				rundis$elm_bootstrap$Bootstrap$Button$button,
@@ -6122,7 +6203,7 @@ var author$project$Jobs$viewSimpleJob = function (job) {
 					[
 						rundis$elm_bootstrap$Bootstrap$Button$primary,
 						rundis$elm_bootstrap$Bootstrap$Button$onClick(
-						A2(author$project$Jobs$UpdateJob, job.h, 1))
+						A2(author$project$Jobs$UpdateJob, job.a, 1))
 					]),
 				_List_fromArray(
 					[
@@ -6148,21 +6229,21 @@ var rundis$elm_bootstrap$Bootstrap$Card$Internal$applyBlockModifier = F2(
 				return _Utils_update(
 					options,
 					{
-						v: elm$core$Maybe$Just(align)
+						w: elm$core$Maybe$Just(align)
 					});
 			case 1:
 				var role = option.a;
 				return _Utils_update(
 					options,
 					{
-						w: elm$core$Maybe$Just(role)
+						x: elm$core$Maybe$Just(role)
 					});
 			case 2:
 				var color = option.a;
 				return _Utils_update(
 					options,
 					{
-						C: elm$core$Maybe$Just(color)
+						D: elm$core$Maybe$Just(color)
 					});
 			default:
 				var attrs = option.a;
@@ -6173,7 +6254,7 @@ var rundis$elm_bootstrap$Bootstrap$Card$Internal$applyBlockModifier = F2(
 					});
 		}
 	});
-var rundis$elm_bootstrap$Bootstrap$Card$Internal$defaultBlockOptions = {v: elm$core$Maybe$Nothing, aV: _List_Nil, w: elm$core$Maybe$Nothing, C: elm$core$Maybe$Nothing};
+var rundis$elm_bootstrap$Bootstrap$Card$Internal$defaultBlockOptions = {w: elm$core$Maybe$Nothing, aV: _List_Nil, x: elm$core$Maybe$Nothing, D: elm$core$Maybe$Nothing};
 var rundis$elm_bootstrap$Bootstrap$Internal$Role$toClass = F2(
 	function (prefix, role) {
 		return elm$html$Html$Attributes$class(
@@ -6239,7 +6320,7 @@ var rundis$elm_bootstrap$Bootstrap$Card$Internal$blockAttributes = function (mod
 			]),
 		_Utils_ap(
 			function () {
-				var _n0 = options.v;
+				var _n0 = options.w;
 				if (!_n0.$) {
 					var align = _n0.a;
 					return _List_fromArray(
@@ -6252,7 +6333,7 @@ var rundis$elm_bootstrap$Bootstrap$Card$Internal$blockAttributes = function (mod
 			}(),
 			_Utils_ap(
 				function () {
-					var _n1 = options.w;
+					var _n1 = options.x;
 					if (!_n1.$) {
 						var role = _n1.a;
 						return _List_fromArray(
@@ -6265,7 +6346,7 @@ var rundis$elm_bootstrap$Bootstrap$Card$Internal$blockAttributes = function (mod
 				}(),
 				_Utils_ap(
 					function () {
-						var _n2 = options.C;
+						var _n2 = options.D;
 						if (!_n2.$) {
 							var color = _n2.a;
 							return _List_fromArray(
@@ -6345,21 +6426,21 @@ var rundis$elm_bootstrap$Bootstrap$Card$Internal$applyModifier = F2(
 				return _Utils_update(
 					options,
 					{
-						v: elm$core$Maybe$Just(align)
+						w: elm$core$Maybe$Just(align)
 					});
 			case 1:
 				var coloring = option.a;
 				return _Utils_update(
 					options,
 					{
-						w: elm$core$Maybe$Just(coloring)
+						x: elm$core$Maybe$Just(coloring)
 					});
 			case 2:
 				var coloring = option.a;
 				return _Utils_update(
 					options,
 					{
-						C: elm$core$Maybe$Just(coloring)
+						D: elm$core$Maybe$Just(coloring)
 					});
 			default:
 				var attrs = option.a;
@@ -6370,7 +6451,7 @@ var rundis$elm_bootstrap$Bootstrap$Card$Internal$applyModifier = F2(
 					});
 		}
 	});
-var rundis$elm_bootstrap$Bootstrap$Card$Internal$defaultOptions = {v: elm$core$Maybe$Nothing, aV: _List_Nil, w: elm$core$Maybe$Nothing, C: elm$core$Maybe$Nothing};
+var rundis$elm_bootstrap$Bootstrap$Card$Internal$defaultOptions = {w: elm$core$Maybe$Nothing, aV: _List_Nil, x: elm$core$Maybe$Nothing, D: elm$core$Maybe$Nothing};
 var rundis$elm_bootstrap$Bootstrap$Card$Internal$cardAttributes = function (modifiers) {
 	var options = A3(elm$core$List$foldl, rundis$elm_bootstrap$Bootstrap$Card$Internal$applyModifier, rundis$elm_bootstrap$Bootstrap$Card$Internal$defaultOptions, modifiers);
 	return _Utils_ap(
@@ -6380,7 +6461,7 @@ var rundis$elm_bootstrap$Bootstrap$Card$Internal$cardAttributes = function (modi
 			]),
 		_Utils_ap(
 			function () {
-				var _n0 = options.w;
+				var _n0 = options.x;
 				if (!_n0.$) {
 					if (!_n0.a.$) {
 						var role = _n0.a.a;
@@ -6401,7 +6482,7 @@ var rundis$elm_bootstrap$Bootstrap$Card$Internal$cardAttributes = function (modi
 			}(),
 			_Utils_ap(
 				function () {
-					var _n1 = options.C;
+					var _n1 = options.D;
 					if (!_n1.$) {
 						var color = _n1.a;
 						return _List_fromArray(
@@ -6414,7 +6495,7 @@ var rundis$elm_bootstrap$Bootstrap$Card$Internal$cardAttributes = function (modi
 				}(),
 				_Utils_ap(
 					function () {
-						var _n2 = options.v;
+						var _n2 = options.w;
 						if (!_n2.$) {
 							var align = _n2.a;
 							return _List_fromArray(
@@ -6528,7 +6609,7 @@ var author$project$Jobs$viewJob = function (job) {
 				_List_Nil,
 				_List_fromArray(
 					[
-						elm$html$Html$text(job.q)
+						elm$html$Html$text(job.k)
 					]),
 				rundis$elm_bootstrap$Bootstrap$Card$config(
 					_List_fromArray(
@@ -6554,10 +6635,10 @@ var author$project$Jobs$SortBy = F2(
 		return {$: 9, a: a, b: b};
 	});
 var author$project$Jobs$orderByCompletion = function (job) {
-	return 100 - author$project$Jobs$computeCompletness(job.m);
+	return 100 - author$project$Jobs$computeCompletness(job.i);
 };
 var author$project$Jobs$orderByName = function (job) {
-	return job.q;
+	return job.k;
 };
 var elm$html$Html$h2 = _VirtualDom_node('h2');
 var rundis$elm_bootstrap$Bootstrap$Internal$Button$Size = function (a) {
@@ -7077,7 +7158,7 @@ var rundis$elm_bootstrap$Bootstrap$Grid$Internal$orderToAttributes = function (o
 	var order_ = function (m) {
 		if (!m.$) {
 			var screenSize = m.a.db;
-			var moveCount = m.a._;
+			var moveCount = m.a.ab;
 			return elm$core$Maybe$Just(
 				elm$html$Html$Attributes$class(
 					'order' + (rundis$elm_bootstrap$Bootstrap$Grid$Internal$screenSizeToPartialString(screenSize) + rundis$elm_bootstrap$Bootstrap$Grid$Internal$orderColOption(moveCount))));
@@ -7124,7 +7205,7 @@ var rundis$elm_bootstrap$Bootstrap$Grid$Internal$pullsToAttributes = function (p
 	var pull_ = function (m) {
 		if (!m.$) {
 			var screenSize = m.a.db;
-			var moveCount = m.a._;
+			var moveCount = m.a.ab;
 			return elm$core$Maybe$Just(
 				elm$html$Html$Attributes$class(
 					'pull' + (rundis$elm_bootstrap$Bootstrap$Grid$Internal$screenSizeToPartialString(screenSize) + rundis$elm_bootstrap$Bootstrap$Grid$Internal$moveCountOption(moveCount))));
@@ -7141,7 +7222,7 @@ var rundis$elm_bootstrap$Bootstrap$Grid$Internal$pushesToAttributes = function (
 	var push_ = function (m) {
 		if (!m.$) {
 			var screenSize = m.a.db;
-			var moveCount = m.a._;
+			var moveCount = m.a.ab;
 			return elm$core$Maybe$Just(
 				elm$html$Html$Attributes$class(
 					'push' + (rundis$elm_bootstrap$Bootstrap$Grid$Internal$screenSizeToPartialString(screenSize) + rundis$elm_bootstrap$Bootstrap$Grid$Internal$moveCountOption(moveCount))));
@@ -7462,17 +7543,17 @@ var author$project$Jobs$viewGrid = function (model) {
 								author$project$Jobs$viewTitle,
 								'Por empezar',
 								0,
-								A2(author$project$Tools$get, 0, model.u)),
+								A2(author$project$Tools$get, 0, model.v)),
 								author$project$Jobs$viewJobs(
 								A2(
 									author$project$Jobs$sortBy,
-									A2(author$project$Tools$get, 0, model.u),
+									A2(author$project$Tools$get, 0, model.v),
 									A2(
 										elm$core$List$filter,
 										function (job) {
-											return author$project$Jobs$computeCompletness(job.m) === 0.0;
+											return author$project$Jobs$computeCompletness(job.i) === 0.0;
 										},
-										model.k)))
+										model.f)))
 							])),
 						A2(
 						rundis$elm_bootstrap$Bootstrap$Grid$col,
@@ -7486,20 +7567,20 @@ var author$project$Jobs$viewGrid = function (model) {
 								author$project$Jobs$viewTitle,
 								'En progreso',
 								1,
-								A2(author$project$Tools$get, 1, model.u)),
+								A2(author$project$Tools$get, 1, model.v)),
 								author$project$Jobs$viewJobs(
 								A2(
 									author$project$Jobs$sortBy,
-									A2(author$project$Tools$get, 1, model.u),
+									A2(author$project$Tools$get, 1, model.v),
 									A2(
 										elm$core$List$filter,
 										function (job) {
 											return A2(
 												author$project$Tools$inExclusiveRange,
-												author$project$Jobs$computeCompletness(job.m),
+												author$project$Jobs$computeCompletness(job.i),
 												_Utils_Tuple2(0, 100));
 										},
-										model.k)))
+										model.f)))
 							])),
 						A2(
 						rundis$elm_bootstrap$Bootstrap$Grid$col,
@@ -7513,17 +7594,17 @@ var author$project$Jobs$viewGrid = function (model) {
 								author$project$Jobs$viewTitle,
 								'Terminado',
 								2,
-								A2(author$project$Tools$get, 2, model.u)),
+								A2(author$project$Tools$get, 2, model.v)),
 								author$project$Jobs$viewJobs(
 								A2(
 									author$project$Jobs$sortBy,
-									A2(author$project$Tools$get, 2, model.u),
+									A2(author$project$Tools$get, 2, model.v),
 									A2(
 										elm$core$List$filter,
 										function (job) {
-											return author$project$Jobs$computeCompletness(job.m) === 100.0;
+											return author$project$Jobs$computeCompletness(job.i) === 100.0;
 										},
-										model.k)))
+										model.f)))
 							]))
 					]))
 			]));
@@ -7542,16 +7623,14 @@ var author$project$Jobs$viewNewButton = function (model) {
 				elm$html$Html$text('Hacer algo nuevo')
 			]));
 };
-var author$project$Jobs$CancelCreating = {$: 5};
+var author$project$Jobs$CancelCreating = {$: 6};
 var author$project$Jobs$ChangeDesc = function (a) {
-	return {$: 3, a: a};
-};
-var author$project$Jobs$ChangeName = function (a) {
-	return {$: 2, a: a};
-};
-var author$project$Jobs$DoneCreating = function (a) {
 	return {$: 4, a: a};
 };
+var author$project$Jobs$ChangeName = function (a) {
+	return {$: 3, a: a};
+};
+var author$project$Jobs$DoneCreating = {$: 5};
 var elm$html$Html$Events$onClick = function (msg) {
 	return A2(
 		elm$html$Html$Events$on,
@@ -7570,6 +7649,12 @@ var rundis$elm_bootstrap$Bootstrap$Form$Input$OnInput = function (a) {
 };
 var rundis$elm_bootstrap$Bootstrap$Form$Input$onInput = function (toMsg) {
 	return rundis$elm_bootstrap$Bootstrap$Form$Input$OnInput(toMsg);
+};
+var rundis$elm_bootstrap$Bootstrap$Form$Input$Placeholder = function (a) {
+	return {$: 7, a: a};
+};
+var rundis$elm_bootstrap$Bootstrap$Form$Input$placeholder = function (value_) {
+	return rundis$elm_bootstrap$Bootstrap$Form$Input$Placeholder(value_);
 };
 var rundis$elm_bootstrap$Bootstrap$Form$InputGroup$Config = elm$core$Basics$identity;
 var rundis$elm_bootstrap$Bootstrap$Form$InputGroup$config = function (input_) {
@@ -7653,7 +7738,7 @@ var rundis$elm_bootstrap$Bootstrap$Form$Input$applyModifier = F2(
 				return _Utils_update(
 					options,
 					{
-						h: elm$core$Maybe$Just(id_)
+						a: elm$core$Maybe$Just(id_)
 					});
 			case 2:
 				var tipe = modifier.a;
@@ -7707,7 +7792,7 @@ var rundis$elm_bootstrap$Bootstrap$Form$Input$applyModifier = F2(
 					});
 		}
 	});
-var rundis$elm_bootstrap$Bootstrap$Form$Input$defaultOptions = {aV: _List_Nil, a3: false, h: elm$core$Maybe$Nothing, bu: elm$core$Maybe$Nothing, bB: elm$core$Maybe$Nothing, bM: false, bR: elm$core$Maybe$Nothing, az: 0, b0: elm$core$Maybe$Nothing, aD: elm$core$Maybe$Nothing};
+var rundis$elm_bootstrap$Bootstrap$Form$Input$defaultOptions = {aV: _List_Nil, a3: false, a: elm$core$Maybe$Nothing, bu: elm$core$Maybe$Nothing, bB: elm$core$Maybe$Nothing, bM: false, bR: elm$core$Maybe$Nothing, az: 0, b0: elm$core$Maybe$Nothing, aD: elm$core$Maybe$Nothing};
 var rundis$elm_bootstrap$Bootstrap$Form$Input$sizeAttribute = function (size) {
 	return A2(
 		elm$core$Maybe$map,
@@ -7769,7 +7854,7 @@ var rundis$elm_bootstrap$Bootstrap$Form$Input$toAttributes = function (modifiers
 				elm$core$Basics$identity,
 				_List_fromArray(
 					[
-						A2(elm$core$Maybe$map, elm$html$Html$Attributes$id, options.h),
+						A2(elm$core$Maybe$map, elm$html$Html$Attributes$id, options.a),
 						A2(elm$core$Maybe$andThen, rundis$elm_bootstrap$Bootstrap$Form$Input$sizeAttribute, options.bR),
 						A2(elm$core$Maybe$map, elm$html$Html$Attributes$value, options.aD),
 						A2(elm$core$Maybe$map, elm$html$Html$Attributes$placeholder, options.bB),
@@ -7873,11 +7958,11 @@ var rundis$elm_bootstrap$Bootstrap$Modal$body = F3(
 var rundis$elm_bootstrap$Bootstrap$Modal$config = function (closeMsg) {
 	return {
 		dq: elm$core$Maybe$Nothing,
-		ai: closeMsg,
+		ak: closeMsg,
 		ca: elm$core$Maybe$Nothing,
 		bb: elm$core$Maybe$Nothing,
 		cj: {b5: true, an: true, av: elm$core$Maybe$Nothing},
-		O: elm$core$Maybe$Nothing
+		Q: elm$core$Maybe$Nothing
 	};
 };
 var rundis$elm_bootstrap$Bootstrap$Modal$Footer = elm$core$Basics$identity;
@@ -7957,12 +8042,12 @@ var elm$html$Html$Attributes$tabindex = function (n) {
 };
 var rundis$elm_bootstrap$Bootstrap$Modal$StartClose = 1;
 var rundis$elm_bootstrap$Bootstrap$Modal$getCloseMsg = function (config_) {
-	var _n0 = config_.O;
+	var _n0 = config_.Q;
 	if (!_n0.$) {
 		var animationMsg = _n0.a;
 		return animationMsg(1);
 	} else {
-		return config_.ai;
+		return config_.ak;
 	}
 };
 var rundis$elm_bootstrap$Bootstrap$Modal$isFade = function (conf) {
@@ -7974,7 +8059,7 @@ var rundis$elm_bootstrap$Bootstrap$Modal$isFade = function (conf) {
 			function (_n0) {
 				return true;
 			},
-			conf.O));
+			conf.Q));
 };
 var rundis$elm_bootstrap$Bootstrap$Modal$backdrop = F2(
 	function (visibility, conf) {
@@ -8106,7 +8191,7 @@ var rundis$elm_bootstrap$Bootstrap$Modal$display = F2(
 						A2(
 						elm$html$Html$Events$on,
 						'transitionend',
-						elm$json$Json$Decode$succeed(conf.ai))
+						elm$json$Json$Decode$succeed(conf.ak))
 					]);
 			default:
 				return _List_fromArray(
@@ -8253,7 +8338,7 @@ var rundis$elm_bootstrap$Bootstrap$Modal$view = F2(
 												A2(
 												elm$html$Html$Events$on,
 												'click',
-												rundis$elm_bootstrap$Bootstrap$Modal$containerClickDecoder(conf.ai))
+												rundis$elm_bootstrap$Bootstrap$Modal$containerClickDecoder(conf.ak))
 											]) : _List_Nil)),
 								_List_fromArray(
 									[
@@ -8278,108 +8363,116 @@ var rundis$elm_bootstrap$Bootstrap$Modal$view = F2(
 				A2(rundis$elm_bootstrap$Bootstrap$Modal$backdrop, visibility, conf)));
 	});
 var author$project$Jobs$viewNewModal = function (model) {
-	var _n0 = model.x;
-	if (_n0.$ === 1) {
-		return A2(elm$html$Html$div, _List_Nil, _List_Nil);
-	} else {
-		var job = _n0.a;
-		return A2(
-			rundis$elm_bootstrap$Bootstrap$Modal$view,
-			model.aj,
-			A3(
-				rundis$elm_bootstrap$Bootstrap$Modal$footer,
-				_List_Nil,
-				_List_fromArray(
-					[
-						A2(
-						rundis$elm_bootstrap$Bootstrap$Button$button,
-						_List_fromArray(
-							[
-								rundis$elm_bootstrap$Bootstrap$Button$outlinePrimary,
-								rundis$elm_bootstrap$Bootstrap$Button$attrs(
-								_List_fromArray(
-									[
-										elm$html$Html$Events$onClick(
-										author$project$Jobs$DoneCreating(job))
-									]))
-							]),
-						_List_fromArray(
-							[
-								elm$html$Html$text('Listo')
-							])),
-						A2(
-						rundis$elm_bootstrap$Bootstrap$Button$button,
-						_List_fromArray(
-							[
-								rundis$elm_bootstrap$Bootstrap$Button$outlineSecondary,
-								rundis$elm_bootstrap$Bootstrap$Button$attrs(
-								_List_fromArray(
-									[
-										elm$html$Html$Events$onClick(author$project$Jobs$CancelCreating)
-									]))
-							]),
-						_List_fromArray(
-							[
-								elm$html$Html$text('Cancelar')
-							]))
-					]),
+	var modalDialog = F2(
+		function (title, job) {
+			return A2(
+				rundis$elm_bootstrap$Bootstrap$Modal$view,
+				model.F,
 				A3(
-					rundis$elm_bootstrap$Bootstrap$Modal$body,
+					rundis$elm_bootstrap$Bootstrap$Modal$footer,
 					_List_Nil,
 					_List_fromArray(
 						[
-							rundis$elm_bootstrap$Bootstrap$Form$InputGroup$view(
 							A2(
-								rundis$elm_bootstrap$Bootstrap$Form$InputGroup$predecessors,
-								_List_fromArray(
-									[
-										A2(
-										rundis$elm_bootstrap$Bootstrap$Form$InputGroup$span,
-										_List_Nil,
-										_List_fromArray(
-											[
-												elm$html$Html$text('Nombre:')
-											]))
-									]),
-								rundis$elm_bootstrap$Bootstrap$Form$InputGroup$config(
-									rundis$elm_bootstrap$Bootstrap$Form$InputGroup$text(
-										_List_fromArray(
-											[
-												rundis$elm_bootstrap$Bootstrap$Form$Input$onInput(author$project$Jobs$ChangeName)
-											]))))),
-							rundis$elm_bootstrap$Bootstrap$Form$InputGroup$view(
+							rundis$elm_bootstrap$Bootstrap$Button$button,
+							_List_fromArray(
+								[
+									rundis$elm_bootstrap$Bootstrap$Button$outlinePrimary,
+									rundis$elm_bootstrap$Bootstrap$Button$attrs(
+									_List_fromArray(
+										[
+											elm$html$Html$Events$onClick(author$project$Jobs$DoneCreating)
+										]))
+								]),
+							_List_fromArray(
+								[
+									elm$html$Html$text('Listo')
+								])),
 							A2(
-								rundis$elm_bootstrap$Bootstrap$Form$InputGroup$predecessors,
-								_List_fromArray(
-									[
-										A2(
-										rundis$elm_bootstrap$Bootstrap$Form$InputGroup$span,
-										_List_Nil,
-										_List_fromArray(
-											[
-												elm$html$Html$text('Descripción:')
-											]))
-									]),
-								rundis$elm_bootstrap$Bootstrap$Form$InputGroup$config(
-									rundis$elm_bootstrap$Bootstrap$Form$InputGroup$text(
-										_List_fromArray(
-											[
-												rundis$elm_bootstrap$Bootstrap$Form$Input$onInput(author$project$Jobs$ChangeDesc)
-											])))))
+							rundis$elm_bootstrap$Bootstrap$Button$button,
+							_List_fromArray(
+								[
+									rundis$elm_bootstrap$Bootstrap$Button$outlineSecondary,
+									rundis$elm_bootstrap$Bootstrap$Button$attrs(
+									_List_fromArray(
+										[
+											elm$html$Html$Events$onClick(author$project$Jobs$CancelCreating)
+										]))
+								]),
+							_List_fromArray(
+								[
+									elm$html$Html$text('Cancelar')
+								]))
 						]),
 					A3(
-						rundis$elm_bootstrap$Bootstrap$Modal$h3,
+						rundis$elm_bootstrap$Bootstrap$Modal$body,
 						_List_Nil,
 						_List_fromArray(
 							[
-								elm$html$Html$text('Nuevo Trabajo')
+								rundis$elm_bootstrap$Bootstrap$Form$InputGroup$view(
+								A2(
+									rundis$elm_bootstrap$Bootstrap$Form$InputGroup$predecessors,
+									_List_fromArray(
+										[
+											A2(
+											rundis$elm_bootstrap$Bootstrap$Form$InputGroup$span,
+											_List_Nil,
+											_List_fromArray(
+												[
+													elm$html$Html$text('Nombre:')
+												]))
+										]),
+									rundis$elm_bootstrap$Bootstrap$Form$InputGroup$config(
+										rundis$elm_bootstrap$Bootstrap$Form$InputGroup$text(
+											_List_fromArray(
+												[
+													rundis$elm_bootstrap$Bootstrap$Form$Input$placeholder(job.k),
+													rundis$elm_bootstrap$Bootstrap$Form$Input$onInput(author$project$Jobs$ChangeName)
+												]))))),
+								rundis$elm_bootstrap$Bootstrap$Form$InputGroup$view(
+								A2(
+									rundis$elm_bootstrap$Bootstrap$Form$InputGroup$predecessors,
+									_List_fromArray(
+										[
+											A2(
+											rundis$elm_bootstrap$Bootstrap$Form$InputGroup$span,
+											_List_Nil,
+											_List_fromArray(
+												[
+													elm$html$Html$text('Descripción:')
+												]))
+										]),
+									rundis$elm_bootstrap$Bootstrap$Form$InputGroup$config(
+										rundis$elm_bootstrap$Bootstrap$Form$InputGroup$text(
+											_List_fromArray(
+												[
+													rundis$elm_bootstrap$Bootstrap$Form$Input$placeholder(job.y),
+													rundis$elm_bootstrap$Bootstrap$Form$Input$onInput(author$project$Jobs$ChangeDesc)
+												])))))
 							]),
-						A2(
-							rundis$elm_bootstrap$Bootstrap$Modal$hideOnBackdropClick,
-							true,
-							rundis$elm_bootstrap$Bootstrap$Modal$large(
-								rundis$elm_bootstrap$Bootstrap$Modal$config(
-									author$project$Jobs$DoneCreating(job))))))));
+						A3(
+							rundis$elm_bootstrap$Bootstrap$Modal$h3,
+							_List_Nil,
+							_List_fromArray(
+								[
+									elm$html$Html$text(title)
+								]),
+							A2(
+								rundis$elm_bootstrap$Bootstrap$Modal$hideOnBackdropClick,
+								true,
+								rundis$elm_bootstrap$Bootstrap$Modal$large(
+									rundis$elm_bootstrap$Bootstrap$Modal$config(author$project$Jobs$DoneCreating)))))));
+		});
+	var _n0 = model.m;
+	switch (_n0.$) {
+		case 0:
+			return A2(elm$html$Html$div, _List_Nil, _List_Nil);
+		case 1:
+			var job = _n0.a;
+			return A2(modalDialog, 'Nuevo Trabajo', job);
+		default:
+			var job = _n0.a;
+			return A2(modalDialog, 'Editar Trabajo', job);
 	}
 };
 var author$project$Main$DelAll = {$: 2};
@@ -8403,19 +8496,19 @@ var author$project$Main$view = function (model) {
 				function (msg) {
 					return author$project$Main$Jobs(msg);
 				},
-				author$project$Jobs$viewGrid(model.k)),
+				author$project$Jobs$viewGrid(model.f)),
 				A2(
 				elm$html$Html$map,
 				function (msg) {
 					return author$project$Main$Jobs(msg);
 				},
-				author$project$Jobs$viewNewButton(model.k)),
+				author$project$Jobs$viewNewButton(model.f)),
 				A2(
 				elm$html$Html$map,
 				function (msg) {
 					return author$project$Main$Jobs(msg);
 				},
-				author$project$Jobs$viewNewModal(model.k)),
+				author$project$Jobs$viewNewModal(model.f)),
 				A2(
 				rundis$elm_bootstrap$Bootstrap$Button$button,
 				_List_fromArray(
