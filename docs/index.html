@@ -22,23 +22,29 @@
   <div id="elm"></div>
   <script>
 
-    var text = localStorage.getItem('myApp');
-    if(text == null)
-        text = "hola";
-
     var myApp = Elm.Main.init({
         node: document.getElementById('elm'),
-        flags: text 
+        flags: "" 
     });
 
-    myApp.ports.save.subscribe(function(data) {
-    //    alert(data)
-        localStorage.setItem('myApp', data);
+    myApp.ports.sendSave.subscribe(function(arg) {
+        var [key, data] = arg;
+        console.log("Save: Data from Elm: ", key);
+        localStorage.setItem(key, data);
     }); 
 
-    myApp.ports.delall.subscribe(function() {
-        localStorage.removeItem('myApp');
+    myApp.ports.sendLoad.subscribe(function(key) {
+        console.log("Load: Data from Elm: ", key);
+        var data = localStorage.getItem(key);
+        myApp.ports.recvLoad.send(data);
     }); 
+
+    myApp.ports.sendDelAll.subscribe(function(key) {
+        console.log("DelAll: Data from Elm: ", key);
+        localStorage.removeItem(key);
+    }); 
+
+
   </script>
 </body>
 </html>

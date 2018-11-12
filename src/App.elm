@@ -14,18 +14,26 @@ import Jobs exposing (..)
 
 -- =========================================================
 
-port save : String -> Cmd msg
-port delall : () -> Cmd msg
+type alias KeyVal = (String, String) 
+
+port sendSave   : KeyVal -> Cmd msg
+port sendDelAll : String -> Cmd msg
+port sendLoad   : String -> Cmd msg
+
+port recvLoad   : (String -> msg) -> Sub msg
+
+appKey = "myApp"
 
 -- =========================================================
 
 type alias Model = 
     {
-        jobs: Jobs.Model
+        jobs: Maybe Jobs.Model
     }
 
 type Msg 
     = Noop 
+    | Load String
     | SaveAll
     | DelAll
     | Jobs Jobs.Msg
@@ -34,41 +42,64 @@ type Msg
 -- ===============================================
 
 emptyModel: Model
-emptyModel = Model Jobs.init
+emptyModel = Model (Just Jobs.init)
 
 init: String -> (Model, Cmd msg)
-init flags = 
-    let 
-        jobs = Jobs.decode flags
-    in
-    (
-        case jobs of
-            Nothing -> emptyModel
-            Just val -> Model val 
-    , Cmd.batch [])
+init _ = ( emptyModel , Cmd.batch [ sendLoad appKey ]) 
 
 -- ===============================================
 -- ===============================================
+
+loadJobs: Model -> String -> Model
+loadJobs model data =
+    {model | jobs = Jobs.decode data }
+
+
+saveJobs: Maybe Jobs.Model -> List (Cmd msg) -> List (Cmd msg)
+saveJobs toSave cmds =
+    let 
+        withKey = \data -> (appKey, data)
+    in
+        case toSave of
+            Nothing  -> cmds
+            Just jm  -> cmds ++ [ jm 
+                                |> Jobs.encode 
+                                |> json2str 
+                                |> withKey 
+                                |> sendSave
+                                ]
+
+updateJobs: Jobs.Msg -> Maybe Jobs.Model -> Maybe Jobs.Model
+updateJobs msg jm =
+    case jm of
+        Nothing -> Nothing
+        Just jobs -> Jobs.update msg jobs |> Just
+
 
 update: Msg -> Model -> (Model, Cmd msg)
 update msg model =
-    let 
-        saveCmd = \jobs -> jobs |> Jobs.encode |> json2str |> save 
-    in
-        case msg of
-            Noop -> (model, Cmd.batch [])
-            SaveAll -> (model, Cmd.batch [ saveCmd model.jobs ]) 
-            DelAll -> (emptyModel, Cmd.batch [ delall () ]) 
-            Jobs a ->
-                let 
-                    newjobs = Jobs.update a model.jobs 
-                in
-                ( { model | jobs = newjobs }
-                , case a of
-                    Jobs.DoneCreating -> Cmd.batch [ saveCmd newjobs ]
-                    Jobs.UpdateJob _ _ -> Cmd.batch [ saveCmd newjobs ]
-                    _ ->  Cmd.batch []
-                )
+    case msg of
+        Noop -> (model, Cmd.batch [])
+        Load data -> (loadJobs model data, Cmd.batch [])
+        SaveAll -> (model,  saveJobs model.jobs [] |> Cmd.batch) 
+        DelAll ->  (emptyModel, Cmd.batch [ sendDelAll appKey ]) 
+        Jobs jobsmsg ->
+            let 
+                newjobs = updateJobs jobsmsg model.jobs
+            in
+            ( { model | jobs = newjobs }
+            , case jobsmsg of
+                Jobs.DoneCreating -> saveJobs model.jobs [] |> Cmd.batch 
+                Jobs.UpdateJob _ _ -> saveJobs model.jobs [] |> Cmd.batch 
+                _ ->  Cmd.batch []
+            )
+
+
+-- ===============================================
+
+subscriptions : Model -> Sub Msg
+subscriptions nodel =
+    recvLoad Load
 
 -- ===============================================
 -- ===============================================
@@ -78,26 +109,25 @@ json2str value = Enco.encode 2 value
 
 view: Model -> Html Msg
 view model =
-    div []
-    [ Html.map  (\msg -> Jobs msg)  (Jobs.viewGrid      model.jobs)
-    , Html.map  (\msg -> Jobs msg)  (Jobs.viewNewButton model.jobs)
-    , Html.map  (\msg -> Jobs msg)  (Jobs.viewNewModal  model.jobs)
-    , Button.button [ Button.secondary
-                    , Button.onClick SaveAll
-                    ] 
-        [ text "Guardar"]
-    , Button.button [ Button.danger
-                    , Button.onClick DelAll
-                    ] 
-        [ text "Borrar todo"]
-    ]
 
--- ===============================================
--- ===============================================
-
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    Sub.none
+    let 
+        jbs =  case model.jobs of
+                    Nothing -> Jobs.init
+                    Just j -> j
+    in
+        div []
+        [ Html.map  (\msg -> Jobs msg)  (Jobs.viewGrid      jbs)
+        , Html.map  (\msg -> Jobs msg)  (Jobs.viewNewButton jbs)
+        , Html.map  (\msg -> Jobs msg)  (Jobs.viewNewModal  jbs)
+        , Button.button [ Button.secondary
+                        , Button.onClick SaveAll
+                        ] 
+            [ text "Guardar"]
+        , Button.button [ Button.danger
+                        , Button.onClick DelAll
+                        ] 
+            [ text "Borrar todo"]
+        ]
 
 -- ===============================================
 -- ===============================================
