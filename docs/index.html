@@ -30,20 +30,25 @@
     myApp.ports.sendSave.subscribe(function(arg) {
         var [key, data] = arg;
         console.log("Save: Data from Elm: ", key);
+        console.log(" - data: ", data);
         localStorage.setItem(key, data);
     }); 
 
     myApp.ports.sendLoad.subscribe(function(key) {
         console.log("Load: Data from Elm: ", key);
         var data = localStorage.getItem(key);
-        myApp.ports.recvLoad.send(data);
+        if(data)
+        {
+            console.log(" - found: ", key);
+            console.log(" - data: ", data);
+            myApp.ports.recvLoad.send(data);
+        }
     }); 
 
     myApp.ports.sendDelAll.subscribe(function(key) {
         console.log("DelAll: Data from Elm: ", key);
         localStorage.removeItem(key);
     }); 
-
 
   </script>
 </body>

@@ -4813,14 +4813,14 @@ var author$project$Main$recvLoad = _Platform_incomingPort('recvLoad', elm$json$J
 var author$project$Main$subscriptions = function (nodel) {
 	return author$project$Main$recvLoad(author$project$Main$Load);
 };
-var author$project$Jobs$Job = F6(
-	function (id, name, desc, tasks, view, editing) {
-		return {desc: desc, editing: editing, id: id, name: name, tasks: tasks, view: view};
+var author$project$Jobs$Job = F7(
+	function (id, name, desc, tasks, photos, view, editing) {
+		return {desc: desc, editing: editing, id: id, name: name, photos: photos, tasks: tasks, view: view};
 	});
 var author$project$Jobs$Simple = {$: 'Simple'};
-var author$project$Jobs$TmpJob = F4(
-	function (id, name, desc, tasks) {
-		return {desc: desc, id: id, name: name, tasks: tasks};
+var author$project$Jobs$TmpJob = F5(
+	function (id, name, desc, tasks, photos) {
+		return {desc: desc, id: id, name: name, photos: photos, tasks: tasks};
 	});
 var author$project$Jobs$Task = F2(
 	function (done, name) {
@@ -4836,7 +4836,7 @@ var author$project$Jobs$decodeTask = A3(
 	A2(elm$json$Json$Decode$field, 'name', elm$json$Json$Decode$string));
 var elm$json$Json$Decode$int = _Json_decodeInt;
 var elm$json$Json$Decode$list = _Json_decodeList;
-var elm$json$Json$Decode$map4 = _Json_map4;
+var elm$json$Json$Decode$map5 = _Json_map5;
 var elm$json$Json$Decode$map = _Json_map1;
 var elm$json$Json$Decode$oneOf = _Json_oneOf;
 var elm$json$Json$Decode$succeed = _Json_succeed;
@@ -4848,17 +4848,23 @@ var elm$json$Json$Decode$maybe = function (decoder) {
 				elm$json$Json$Decode$succeed(elm$core$Maybe$Nothing)
 			]));
 };
-var author$project$Jobs$decodeJob = A5(
-	elm$json$Json$Decode$map4,
+var author$project$Jobs$decodeJob = A6(
+	elm$json$Json$Decode$map5,
 	author$project$Jobs$TmpJob,
 	A2(elm$json$Json$Decode$field, 'id', elm$json$Json$Decode$int),
 	A2(elm$json$Json$Decode$field, 'name', elm$json$Json$Decode$string),
 	elm$json$Json$Decode$maybe(
 		A2(elm$json$Json$Decode$field, 'desc', elm$json$Json$Decode$string)),
-	A2(
-		elm$json$Json$Decode$field,
-		'tasks',
-		elm$json$Json$Decode$list(author$project$Jobs$decodeTask)));
+	elm$json$Json$Decode$maybe(
+		A2(
+			elm$json$Json$Decode$field,
+			'tasks',
+			elm$json$Json$Decode$list(author$project$Jobs$decodeTask))),
+	elm$json$Json$Decode$maybe(
+		A2(
+			elm$json$Json$Decode$field,
+			'photos',
+			elm$json$Json$Decode$list(elm$json$Json$Decode$string))));
 var elm$core$List$foldrHelper = F4(
 	function (fn, acc, ctr, ls) {
 		if (!ls.b) {
@@ -4967,6 +4973,17 @@ var author$project$Jobs$decode = function (str) {
 			return elm$core$Maybe$Nothing;
 		}
 	}();
+	var decoFunc = function (j) {
+		return A7(
+			author$project$Jobs$Job,
+			j.id,
+			j.name,
+			A2(elm$core$Maybe$withDefault, '', j.desc),
+			A2(elm$core$Maybe$withDefault, _List_Nil, j.tasks),
+			A2(elm$core$Maybe$withDefault, _List_Nil, j.photos),
+			author$project$Jobs$Simple,
+			elm$core$Maybe$Nothing);
+	};
 	var count = function () {
 		if (maybecount.$ === 'Just') {
 			var n = maybecount.a;
@@ -4984,19 +5001,7 @@ var author$project$Jobs$decode = function (str) {
 				author$project$Jobs$None,
 				count,
 				author$project$Jobs$initSort,
-				A2(
-					elm$core$List$map,
-					function (j) {
-						return A6(
-							author$project$Jobs$Job,
-							j.id,
-							j.name,
-							A2(elm$core$Maybe$withDefault, '', j.desc),
-							j.tasks,
-							author$project$Jobs$Simple,
-							elm$core$Maybe$Nothing);
-					},
-					jobs)));
+				A2(elm$core$List$map, decoFunc, jobs)));
 	} else {
 		return elm$core$Maybe$Nothing;
 	}
@@ -5065,7 +5070,10 @@ var author$project$Jobs$encodeJob = function (job) {
 					function (task) {
 						return author$project$Jobs$encodeTask(task);
 					},
-					job.tasks))
+					job.tasks)),
+				_Utils_Tuple2(
+				'photos',
+				A2(elm$json$Json$Encode$list, elm$json$Json$Encode$string, job.photos))
 			]));
 };
 var author$project$Jobs$encode = function (model) {
@@ -5223,7 +5231,7 @@ var author$project$Jobs$update = F2(
 					{
 						create: rundis$elm_bootstrap$Bootstrap$Modal$shown,
 						creating: author$project$Jobs$Create(
-							A6(author$project$Jobs$Job, model.nextId, '', '', author$project$Jobs$initTasks, author$project$Jobs$Simple, elm$core$Maybe$Nothing))
+							A7(author$project$Jobs$Job, model.nextId, '', '', author$project$Jobs$initTasks, _List_Nil, author$project$Jobs$Simple, elm$core$Maybe$Nothing))
 					});
 			case 'ChangeName':
 				var newname = msg.a;
@@ -5235,7 +5243,7 @@ var author$project$Jobs$update = F2(
 							model,
 							{
 								creating: author$project$Jobs$Create(
-									A6(author$project$Jobs$Job, job.id, newname, job.desc, job.tasks, author$project$Jobs$Simple, elm$core$Maybe$Nothing))
+									A7(author$project$Jobs$Job, job.id, newname, job.desc, job.tasks, _List_Nil, author$project$Jobs$Simple, elm$core$Maybe$Nothing))
 							});
 					case 'Edit':
 						var job = _n1.a;
@@ -5243,7 +5251,7 @@ var author$project$Jobs$update = F2(
 							model,
 							{
 								creating: author$project$Jobs$Edit(
-									A6(author$project$Jobs$Job, job.id, newname, job.desc, job.tasks, author$project$Jobs$Simple, elm$core$Maybe$Nothing))
+									A7(author$project$Jobs$Job, job.id, newname, job.desc, job.tasks, _List_Nil, author$project$Jobs$Simple, elm$core$Maybe$Nothing))
 							});
 					default:
 						return model;
@@ -5258,7 +5266,7 @@ var author$project$Jobs$update = F2(
 							model,
 							{
 								creating: author$project$Jobs$Create(
-									A6(author$project$Jobs$Job, job.id, job.name, newdesc, job.tasks, author$project$Jobs$Simple, elm$core$Maybe$Nothing))
+									A7(author$project$Jobs$Job, job.id, job.name, newdesc, job.tasks, _List_Nil, author$project$Jobs$Simple, elm$core$Maybe$Nothing))
 							});
 					case 'Edit':
 						var job = _n2.a;
@@ -5266,7 +5274,7 @@ var author$project$Jobs$update = F2(
 							model,
 							{
 								creating: author$project$Jobs$Edit(
-									A6(author$project$Jobs$Job, job.id, job.name, newdesc, job.tasks, author$project$Jobs$Simple, elm$core$Maybe$Nothing))
+									A7(author$project$Jobs$Job, job.id, job.name, newdesc, job.tasks, _List_Nil, author$project$Jobs$Simple, elm$core$Maybe$Nothing))
 							});
 					default:
 						return model;
@@ -5420,10 +5428,10 @@ var author$project$Main$update = F2(
 						switch (jobsmsg.$) {
 							case 'DoneCreating':
 								return elm$core$Platform$Cmd$batch(
-									A2(author$project$Main$saveJobs, model.jobs, _List_Nil));
+									A2(author$project$Main$saveJobs, newjobs, _List_Nil));
 							case 'UpdateJob':
 								return elm$core$Platform$Cmd$batch(
-									A2(author$project$Main$saveJobs, model.jobs, _List_Nil));
+									A2(author$project$Main$saveJobs, newjobs, _List_Nil));
 							default:
 								return elm$core$Platform$Cmd$batch(_List_Nil);
 						}
