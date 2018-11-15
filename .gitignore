@@ -1,2 +1,8 @@
+/target
+**/*.rs.bk
+.tmp_scripts
 elm-stuff
 node_modules
+Cargo.lock
+/target
+**/*.rs.bk

@@ -1,8 +1,13 @@
 [package]
-name = "qpy-server"
+name = "quepintoyo"
 version = "0.1.0"
 authors = ["Luis F. Ayuso <luis.ayuso@essteyr.com>"]
 edition = "2018"
 
 [dependencies]
 rocket = "0.4.0-rc.1"
+bson = "0.12.2"
+mongodb = "0.3.10"
+serde = "1.0.80"
+serde_derive = "1.0.80"
+

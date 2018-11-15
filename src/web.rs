@@ -1,7 +1,3 @@
-#![feature(proc_macro_hygiene, decl_macro)]
-
-#[macro_use] 
-extern crate rocket;
 use rocket::http::RawStr;
 use rocket::http::Status;
 use rocket::response::NamedFile;
@@ -13,13 +9,26 @@ use std::path::{Path, PathBuf};
 use std::ffi::{OsStr};
 
 
-#[get("/")]
+// =========================================================
+
+const ELM :&'static str =  "C:\\Users\\Luis\\AppData\\Roaming\\npm\\elm.cmd";
+const TMP_SCRIPT_FOLDER: &'static str =  ".tmp_scripts";
+
+// =========================================================
+
+#[get("/", rank = 2)]
 fn index() -> Option<NamedFile> {
     NamedFile::open(Path::new("static/index.html")).ok()
 }
 
-const ELM :&'static str =  "C:\\Users\\Luis\\AppData\\Roaming\\npm\\elm.cmd";
-const TMP_SCRIPT_FOLDER: &'static str =  ".tmp_scripts";
+// =========================================================
+
+#[get("/<file..>", rank = 1)]
+fn static_files(file: PathBuf) -> Option<NamedFile> {
+    NamedFile::open(Path::new("static/").join(file)).ok()
+}
+
+// =========================================================
 
 fn compile (elmpath: &Path, jspath: &Path) -> Result<String, Status> {
     // compile
@@ -41,10 +50,12 @@ fn compile (elmpath: &Path, jspath: &Path) -> Result<String, Status> {
     Ok("great".to_string())
 }
 
-#[get("/scripts/<file>")]
-fn elm(file: &RawStr) -> Result<NamedFile, Status> {
+// =========================================================
 
-    let jspath = Path::new(TMP_SCRIPT_FOLDER).join(file.to_string());
+#[get("/scripts/<scriptfile>")]
+fn script(scriptfile: &RawStr) -> Result<NamedFile, Status> {
+
+    let jspath = Path::new(TMP_SCRIPT_FOLDER).join(scriptfile.to_string());
 
     // asking for a js script
     if jspath.extension() != Some(OsStr::new("js"))
@@ -69,8 +80,13 @@ fn elm(file: &RawStr) -> Result<NamedFile, Status> {
     NamedFile::open(jspath).map_err(|_| Status::InternalServerError)
 }
 
-fn main() {
+// =========================================================
+
+pub fn kickstart(){
+
     rocket::ignite()
-            .mount("/", routes![index, elm])
+            //.manage(AppState { count : AtomicUsize::new(0) })
+            .mount("/", routes![index, static_files, script])
             .launch();
+
 }

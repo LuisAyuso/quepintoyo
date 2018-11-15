@@ -62,7 +62,8 @@ type alias Job =
     , name: String
     , desc: String
     , tasks: List Task
-    -- data for manipulating, not saved
+    , photos: List String
+    -- data for manipulating, do not serialize => not saved
     , view: ViewKind
     , editing: Maybe (List Task)
     }
@@ -184,19 +185,36 @@ update msg model =
         CreateJob -> 
             { model | 
                 create = Modal.shown,
-                creating = Create (Job model.nextId "" "" initTasks Simple Nothing)
+                creating = Job model.nextId "" "" initTasks [] Simple Nothing
+                            |> Create
             }
 
         ChangeName newname -> 
             case model.creating of
-                Create job -> { model | creating = Create (Job job.id newname job.desc job.tasks Simple Nothing)}
-                Edit job -> { model | creating = Edit (Job job.id newname job.desc job.tasks Simple Nothing)}
+                Create job -> 
+                    { model 
+                    | creating = Job job.id newname job.desc job.tasks [] Simple Nothing
+                                |> Create
+                    }
+                Edit job -> 
+                    { model 
+                    | creating = Job job.id newname job.desc job.tasks [] Simple Nothing
+                                |> Edit
+                    }
                 None -> model
 
         ChangeDesc newdesc -> 
             case model.creating of
-                Create job -> { model | creating = Create (Job job.id job.name newdesc job.tasks Simple Nothing)}
-                Edit job -> { model | creating = Edit (Job job.id job.name newdesc job.tasks Simple Nothing)}
+                Create job -> 
+                    { model 
+                    | creating = Job job.id job.name newdesc job.tasks [] Simple Nothing 
+                                |> Create
+                    }
+                Edit job -> 
+                    { model 
+                    | creating = Job job.id job.name newdesc job.tasks [] Simple Nothing
+                                |> Edit
+                    }
                 None -> model
 
         DoneCreating -> 
@@ -265,7 +283,7 @@ update msg model =
 
 
 -- =================================================================
--- help routines
+-- serialize routines
 
 encodeTask: Task -> Enco.Value
 encodeTask task = Enco.object 
@@ -281,6 +299,9 @@ encodeJob job = Enco.object
     , ("desc", Enco.string job.desc ) 
     , ("tasks",
         job.tasks |> Enco.list (\task -> encodeTask task)
+      )
+    , ("photos",
+        job.photos |> Enco.list Enco.string
       )
     ]
 
@@ -302,17 +323,19 @@ type alias TmpJob =
     { id: JobId
     , name: String
     , desc: Maybe String
-    , tasks: List Task
+    , tasks: Maybe (List Task)
+    , photos: Maybe (List String)
     }
 
 
 decodeJob : Deco.Decoder TmpJob
 decodeJob =
-  map4 TmpJob
+  map5 TmpJob
       (Deco.field "id" Deco.int)
       (Deco.field "name" Deco.string)
       (Deco.maybe <| Deco.field "desc" Deco.string)
-      (Deco.field "tasks" (Deco.list decodeTask))
+      (Deco.maybe <| Deco.field "tasks" (Deco.list decodeTask))
+      (Deco.maybe <| Deco.field "photos" (Deco.list Deco.string))
 
 
 decode: String -> Maybe Model
@@ -329,11 +352,21 @@ decode str =
             case maybecount of 
                 Just n -> n + 1
                 _ -> 0
+
+        decoFunc = (\j -> Job 
+                            j.id 
+                            j.name 
+                            (Maybe.withDefault "" j.desc) 
+                            (Maybe.withDefault [] j.tasks)
+                            (Maybe.withDefault [] j.photos)
+                            -- default editing values
+                            Simple 
+                            Nothing)
     in
        case tmpdeco of 
            Ok jobs ->  
                 jobs
-                    |> List.map (\j -> Job j.id j.name (Maybe.withDefault "" j.desc) j.tasks Simple Nothing)
+                    |> List.map decoFunc
                     |> Model Modal.hidden None count initSort
                     |> Just
            Err _ -> Nothing

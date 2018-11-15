@@ -69,6 +69,7 @@ saveJobs toSave cmds =
                                 |> sendSave
                                 ]
 
+
 updateJobs: Jobs.Msg -> Maybe Jobs.Model -> Maybe Jobs.Model
 updateJobs msg jm =
     case jm of
@@ -89,8 +90,8 @@ update msg model =
             in
             ( { model | jobs = newjobs }
             , case jobsmsg of
-                Jobs.DoneCreating -> saveJobs model.jobs [] |> Cmd.batch 
-                Jobs.UpdateJob _ _ -> saveJobs model.jobs [] |> Cmd.batch 
+                Jobs.DoneCreating -> saveJobs newjobs [] |> Cmd.batch 
+                Jobs.UpdateJob _ _ -> saveJobs newjobs [] |> Cmd.batch 
                 _ ->  Cmd.batch []
             )
 
