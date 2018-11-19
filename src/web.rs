@@ -18,7 +18,8 @@ use crate::appstate::AppState as App;
 
 // =========================================================
 
-const ELM :&'static str =  "C:\\Users\\Luis\\AppData\\Roaming\\npm\\elm.cmd";
+// const ELM :&'static str =  "C:\\Users\\Luis\\AppData\\Roaming\\npm\\elm.cmd";
+const ELM :&'static str =  "elm";
 const TMP_SCRIPT_FOLDER: &'static str =  ".tmp_scripts";
 
 // =========================================================
