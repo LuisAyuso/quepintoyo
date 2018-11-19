@@ -12,6 +12,7 @@
             "elm/http": "1.0.0",
             "elm/json": "1.0.0",
             "prozacchiwawa/elm-urlbase64": "1.0.1",
+            "rtfeldman/elm-validate": "4.0.1",
             "rundis/elm-bootstrap": "5.0.0",
             "truqu/elm-base64": "2.0.4"
         },

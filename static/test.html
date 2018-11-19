@@ -15,35 +15,43 @@
   <!-- Custom styles for this template -->
 
   <!-- my app -->
-  <script src="scripts/Upload.js"></script>
+  <script src="scripts/Login.js"></script>
 </head>
 
 <body>
   <div id="elm"></div>
   <script>
 
-    var myApp = Elm.Main.init({
+    var myApp = Elm.Login.init({
         node: document.getElementById('elm'),
         flags: "" 
     });
 
-
-    myApp.ports.sendOpenFile.subscribe(function(file) {
-        console.log("open file: ", file);
-
-        var fr = new FileReader(file)
-
-        fr.onloadend=function(ev)
-        {
-            console.log("res: " + fr.result);
+/*
+    myApp.ports.sendOpenFile.subscribe(function(id) {
+     
+        var node = document.getElementById(id)
+        if (node === null){
+          return;
         }
 
-        var data = new Blob();
-        fr.readAsText(data);
-        myApp.ports.recvOpenFile.send(window.btoa(data));
+        var file = node.files[0];
+        console.log("open file: ", file);
+
+        var reader = new FileReader();
+        reader.onload = (function(event){
+          var base64encoded = event.target.result;
+          var portData = {
+            contents: base64encoded,
+            filename: file.name
+          };
+          myApp.ports.recvOpenFile.send(portData);
+        });
+        reader.readAsDataURL(file);
 
     }); 
-
+*/
   </script>
+
 </body>
 </html>
