@@ -10,9 +10,19 @@ extern crate mongodb;
 #[macro_use] 
 extern crate serde_derive;
 
+extern crate sha3;
+extern crate rand;
+extern crate hex;
+
+
+#[macro_use]
+mod conversion;
+
 mod db;
 mod appstate;
 mod web;
+mod error;
+
 
 fn main() {
     let db_host = "192.168.0.2";

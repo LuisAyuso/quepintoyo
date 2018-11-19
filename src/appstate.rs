@@ -1,8 +1,13 @@
 use serde_json;
 
 use bson;
+use std::collections::BTreeMap as Map;
 
 use crate::db;
+use crate::error;
+
+#[macro_use]
+use crate::conversion::*;
 
 // =========================================================
 
@@ -11,6 +16,8 @@ pub struct Task {
     pub name: String,
     pub done: bool
 }
+
+serialize_tools!(Task);
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Job {
@@ -32,27 +39,82 @@ impl Job {
             None => { self.tasks = Some(vec!(task)); }
         }
     }
+}
 
-    pub fn to_json(&self) -> Result<String, serde_json::error::Error>{
-        serde_json::to_string(self)
+serialize_tools!(Job);
+
+// =========================================================
+
+#[derive(Serialize, Deserialize, FromForm, Debug, Clone)]
+pub struct UserData{
+    pub user: String,
+    pub password: String,
+}
+
+impl UserData {
+    pub fn new(name: String, password: String) -> UserData{
+        UserData{
+            user : name,
+            password: password,
+        }
     }
+}
 
-    pub fn to_bson(&self) -> Result<bson::Bson,  bson::EncoderError>{
-        bson::to_bson(self)
+serialize_tools!(UserData);
+
+// =========================================================
+
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Token {
+    val: String
+}
+
+impl Token{
+    pub fn new () -> Result<Token,()>{
+        use std::time::*;
+        let now = SystemTime::now();
+        use rand::{Rng, thread_rng};
+
+        // time+rand
+        let mut rng = thread_rng();
+        let t =  now.elapsed().map(|d| d.as_secs()).map_err(|_| ())?;
+        let r: f64 = rng.gen();
+        let raw = format!("{}{}",t,r);
+
+        // hash
+        use sha3::{Digest, Sha3_256};
+        let mut hasher = Sha3_256::new();
+        hasher.input(raw.as_bytes());
+        let result = hasher.result();
+
+        // to hex
+        let hex_string = hex::encode(result);
+
+        Ok(Token { 
+            val: hex_string
+        })
+    }
+}
+
+impl std::string::ToString for Token{
+    fn to_string(&self) -> String{
+        self.val.clone()
     }
 }
 
 // =========================================================
 
 pub struct AppState {
-    pub db: db::Connection
+    pub db: db::Connection,
+    pub tokens:  Map<Token, UserData>
 }
 
 impl AppState{
 
     pub fn new(conn: db::Connection)-> AppState{
         AppState {
-            db: conn
+            db: conn,
+            tokens: Map::new(),
         }
     }
 }
@@ -64,6 +126,7 @@ mod tests {
 
     use super::*;
     use bson;
+    use crate::error;
 
     #[test]
     fn to_doc() {
@@ -78,18 +141,22 @@ mod tests {
 
         job.add_task(Task{ name : "task1".to_string(), done : false});
 
-
-        let bson = job.to_bson().expect("to bson");
-        if let bson::Bson::Document(document) = bson {
-            assert_eq!(document.len(), 5);
-        }
-        else{
-            assert!(false);
-        }
+        let bson_doc = job.to_bson().expect("to bson");
+        assert_eq!(bson_doc.len(), 5);
 
         let json = job.to_json().expect("to json");
         println!("{}", json);
         assert_eq!(json, 
                    r#"{"id":0,"name":"the name","desc":"a description","tasks":[{"name":"task1","done":false}],"photos":null}"#);
     }
+
+    #[test]
+    fn conversion() {
+
+        let data = UserData::new("abc".to_string(), "abc".to_string());
+
+    }
 }
+
+
+

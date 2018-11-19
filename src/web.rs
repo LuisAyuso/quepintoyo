@@ -60,48 +60,59 @@ pub fn upload(data: Data) ->  Result<String, Status> {
 
 // =========================================================
 
-#[derive(Serialize, Deserialize, FromForm, Debug)]
-struct Login{
-    user: String,
-    password: String,
-}
+use crate::appstate::UserData as Login;
 
 #[post("/login", data = "<data>")]
 fn login(data: Form<Login>, state: State<App>) ->  Result<String, Status> {
 
     println!("{:?}", data.user);
     let query = doc!{
-        "username": data.user.clone(),
+        "user": data.user.clone(),
     };
-    let res = state.db.find("users", query);
-    match res{
-        Err(_) => {
-            println!("failed user query!");
-            return Err(Status::InternalServerError);
-        }
-        Ok(mut cursor) => {
-            println!("cursor retrieved");
-            if let Some(doc) = cursor.next(){
-                println!("one at least");
-                if cursor.has_next().map_err(|_| Status::InternalServerError)?
-                {
-                    println!("more than one?");
-                    return Err(Status::InternalServerError);
-                }
+// let query : bson::Document = data.into_inner().into()?;
 
-                let doc = doc.map_err(|_| Status::InternalServerError)?;
-                    println!("read");
+    let cursor = state.db.find("users", query).map_err(|_| Status::InternalServerError)?;
+    println!("cursor retrieved");
 
+    let entries : Vec<Result<Login, Status>> = cursor.map(|elem| 
+        match elem {
+            Err(_) => Err(Status::InternalServerError),
+            Ok(doc) => { 
                 let rec : Login = bson::from_bson(bson::Bson::Document(doc))
                                 .map_err(|_| Status::InternalServerError)?;
-                    println!("converted");
-
-                if rec.password == data.password{
-                    return Ok("token".to_string());
-                }
+                Ok(rec)
             }
         }
+    ).collect();
+
+    for entry in entries{
+        println!("{:?}", entry);
     }
+
+
+/*    if let Some(doc) = cursor.next(){
+        println!("one at least");
+
+
+        if cursor.has_next().map_err(|_| Status::InternalServerError)?
+        {
+            println!("more than one?");
+            return Err(Status::InternalServerError);
+        }
+
+        let doc = doc.map_err(|_| Status::InternalServerError)?;
+            println!("read");
+
+        let rec : Login = bson::from_bson(bson::Bson::Document(doc))
+                        .map_err(|_| Status::InternalServerError)?;
+            println!("converted");
+
+        if rec.password == data.password{
+            return Ok("token".to_string());
+        }
+    }
+    */
+
     Err(Status::Unauthorized)
 }
 

@@ -94,7 +94,7 @@ mod tests {
     fn conn_remote() {
 
         assert_eq!(APPDB, "testDB");
-        let conn = Connection::new("192.168.0.2",  32773).expect("must connect");
+        let conn = Connection::new("192.168.0.2",  32770).expect("must connect");
 
         let query = doc!{
             "title": "Jaws",
