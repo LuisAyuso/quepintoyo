@@ -79,7 +79,7 @@ fn login(data: Form<Login>, state: State<App>) -> Result<String, Status> {
 
     let tok = Token::new()?;
     state.tokens.write().map_err(|_|Status::InternalServerError)?.entry(tok.clone()).or_insert(entry);
-    return Ok(tok.to_string());
+    Ok(tok.to_string())
 }
 
 #[post("/register", data = "<data>")]
@@ -90,6 +90,7 @@ fn register(data: Form<Login>, state: State<App>) -> Result<String, Status> {
         "username": data.user.clone(),
     };
     let res = state.db.find("users", query);
+
     match res {
         Err(_) => {
             println!("failed user query!");
@@ -106,7 +107,11 @@ fn register(data: Form<Login>, state: State<App>) -> Result<String, Status> {
             let user_entry = bson::to_bson(&data).map_err(|_| Status::InternalServerError)?;
             if let bson::Bson::Document(doc) = user_entry {
                 return match state.db.add_doc("users", doc) {
-                    Ok(_) => Ok("token".to_string()),
+                    Ok(_) => {
+                        let tok = Token::new()?;
+                        state.tokens.write().map_err(|_|Status::InternalServerError)?.entry(tok.clone()).or_insert(data);
+                        Ok(tok.to_string())
+                    }
                     Err(_) => Err(Status::InternalServerError),
                 };
             }

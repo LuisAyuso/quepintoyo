@@ -9,8 +9,11 @@ import Json.Decode as Deco exposing (..)
 import Json.Encode as Enco exposing (..) 
 
 import Bootstrap.Button as Button
+import Bootstrap.Modal as Modal
+import Bootstrap.Navbar as Navbar
 
 import Jobs exposing (..)
+import Login exposing (..)
 
 -- =========================================================
 
@@ -26,9 +29,18 @@ appKey = "myApp"
 
 -- =========================================================
 
+type View 
+    = Kanban Jobs.Model
+    | Feed
+    | Settings
+    | Calendar
+
 type alias Model = 
-    {
-        jobs: Maybe Jobs.Model
+    { logged_token: Maybe String
+    , view: View
+    , login_win: Modal.Visibility
+    , navbarState : Navbar.State 
+    , login: Login.Model  
     }
 
 type Msg 
@@ -36,71 +48,101 @@ type Msg
     | Load String
     | SaveAll
     | DelAll
-    | Jobs Jobs.Msg
+    | JobsMsg Jobs.Msg
+    | LoginMsg Login.Msg
+    | NavbarMsg Navbar.State
 
 -- ===============================================
 -- ===============================================
 
-emptyModel: Model
-emptyModel = Model (Just Jobs.init)
+emptyJobs = Jobs.init
 
-init: String -> (Model, Cmd msg)
-init _ = ( emptyModel , Cmd.batch [ sendLoad appKey ]) 
+init: String -> (Model, Cmd Msg)
+init _ = 
+    let (lm, _) =  Login.init ""
+        kanban = Kanban emptyJobs
+        feed = Feed
+        (navbar, cmds) = Navbar.initialState NavbarMsg
+        modal = Modal.shown -- Modal.hidden
+    in (Model Nothing feed modal navbar lm , cmds)
+    -- in (Model Nothing Kanban emp Modal.shown lm, Cmd.none)
+-- ( emptyModel , Cmd.batch [ sendLoad appKey ]) 
 
 -- ===============================================
 -- ===============================================
 
 loadJobs: Model -> String -> Model
-loadJobs model data =
-    {model | jobs = Jobs.decode data }
+loadJobs model data = model
+    -- {model | jobs = Jobs.decode data }
 
 
-saveJobs: Maybe Jobs.Model -> List (Cmd msg) -> List (Cmd msg)
-saveJobs toSave cmds =
+saveJobs: Jobs.Model -> Cmd Msg
+saveJobs jobs =
     let 
         withKey = \data -> (appKey, data)
     in
-        case toSave of
-            Nothing  -> cmds
-            Just jm  -> cmds ++ [ jm 
-                                |> Jobs.encode 
-                                |> json2str 
-                                |> withKey 
-                                |> sendSave
-                                ]
+       Cmd.batch [ jobs 
+        |> Jobs.encode 
+        |> json2str 
+        |> withKey 
+        |> sendSave
+        ]
 
 
-updateJobs: Jobs.Msg -> Maybe Jobs.Model -> Maybe Jobs.Model
-updateJobs msg jm =
-    case jm of
-        Nothing -> Nothing
-        Just jobs -> Jobs.update msg jobs |> Just
+updateJobs: Jobs.Msg -> Jobs.Model -> Maybe Jobs.Model
+updateJobs msg jobs =
+        Jobs.update msg jobs |> Just
 
+upModelKanban: Model -> (m -> m) -> Model
+upModelKanban model callback =
+    model
 
-update: Msg -> Model -> (Model, Cmd msg)
+upCmdKanban: Model -> (Jobs.Model -> Cmd Msg) -> Cmd Msg
+upCmdKanban model callback =
+    case model.view of
+        Kanban km -> callback km -- |> Cmd.map JobsMsg
+        _ -> Cmd.batch []
+
+update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
+
     case msg of
-        Noop -> (model, Cmd.batch [])
-        Load data -> (loadJobs model data, Cmd.batch [])
-        SaveAll -> (model,  saveJobs model.jobs [] |> Cmd.batch) 
-        DelAll ->  (emptyModel, Cmd.batch [ sendDelAll appKey ]) 
-        Jobs jobsmsg ->
-            let 
-                newjobs = updateJobs jobsmsg model.jobs
-            in
-            ( { model | jobs = newjobs }
-            , case jobsmsg of
-                Jobs.DoneCreating -> saveJobs newjobs [] |> Cmd.batch 
-                Jobs.UpdateJob _ _ -> saveJobs newjobs [] |> Cmd.batch 
-                _ ->  Cmd.batch []
-            )
+        Noop -> (model, Cmd.none )
+
+        Load data -> (model, Cmd.none)
+            --(loadJobs model data, Cmd.batch [])
+        SaveAll -> (model
+                   , upCmdKanban model (\jm -> saveJobs jm) )
+
+        DelAll ->  (model, Cmd.batch [ sendDelAll appKey ]) 
+
+        JobsMsg jobsmsg -> (model, Cmd.batch [])
+    --        let 
+    --            newjobs = updateJobs jobsmsg model.view
+    --        in
+    --        ( { model | jobs = newjobs }
+    --        , case jobsmsg of
+    --            Jobs.DoneCreating -> saveJobs newjobs [] |> Cmd.batch 
+    --            Jobs.UpdateJob _ _ -> saveJobs newjobs [] |> Cmd.batch 
+    --            _ ->  Cmd.batch []
+    --        )
+        LoginMsg loginmsg -> 
+                let (nm, cmds) = Login.update loginmsg model.login
+                in 
+                    ({model | login = nm }, Cmd.map LoginMsg cmds)
+            -- cmds |> Cmd.map LoginMsg )
+        NavbarMsg state -> 
+            ( { model | navbarState = state }, Cmd.none )
 
 
 -- ===============================================
 
 subscriptions : Model -> Sub Msg
-subscriptions nodel =
-    recvLoad Load
+subscriptions model =
+    Sub.batch [
+    Navbar.subscriptions model.navbarState NavbarMsg
+    ]
+    -- recvLoad Load
 
 -- ===============================================
 -- ===============================================
@@ -110,25 +152,47 @@ json2str value = Enco.encode 2 value
 
 view: Model -> Html Msg
 view model =
+    div[]
+    [
+    Navbar.config NavbarMsg
+        |> Navbar.withAnimation
+        |> Navbar.brand [ href "#"] [ text "QuePintoYo"]
+        |> Navbar.items
+            [ Navbar.itemLink [href "#"] [ text "Feed"]
+            , Navbar.itemLink [href "#"] [ text "Trabajos"]
+            , Navbar.itemLink [href "#"] [ text "Calendario"]
+            , Navbar.itemLink [href "#"] [ text "Configuración"]
+            ]
+        |> Navbar.view model.navbarState
+    ,
 
-    let 
-        jbs =  case model.jobs of
-                    Nothing -> Jobs.init
-                    Just j -> j
-    in
-        div []
-        [ Html.map  (\msg -> Jobs msg)  (Jobs.viewGrid      jbs)
-        , Html.map  (\msg -> Jobs msg)  (Jobs.viewNewButton jbs)
-        , Html.map  (\msg -> Jobs msg)  (Jobs.viewNewModal  jbs)
-        , Button.button [ Button.secondary
-                        , Button.onClick SaveAll
-                        ] 
-            [ text "Guardar"]
-        , Button.button [ Button.danger
-                        , Button.onClick DelAll
-                        ] 
-            [ text "Borrar todo"]
-        ]
+        case model.view of
+            Kanban jbs ->
+                div []
+                [ Html.map  (\msg -> JobsMsg msg)  (Jobs.viewGrid      jbs)
+                , Html.map  (\msg -> JobsMsg msg)  (Jobs.viewNewButton jbs)
+                , Html.map  (\msg -> JobsMsg msg)  (Jobs.viewNewModal  jbs)
+                , Button.button [ Button.secondary
+                                , Button.onClick SaveAll
+                                ] 
+                    [ text "Guardar"]
+                , Button.button [ Button.danger
+                                , Button.onClick DelAll
+                                ] 
+                    [ text "Borrar todo"]
+                ]
+            Feed -> text "feed"
+            Settings -> text "settings"
+            Calendar -> text"calendar"
+
+        , Modal.config (Noop)
+            |> Modal.large
+            |> Modal.hideOnBackdropClick False
+            --|> Modal.h3 [] [ text "hello" ]
+            |> Modal.body []  [ Html.map LoginMsg (Login.view model.login) ]
+            --|> Modal.footer [] []
+            |> Modal.view model.login_win
+    ]
 
 -- ===============================================
 -- ===============================================

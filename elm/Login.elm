@@ -228,8 +228,9 @@ viewRegister model =
                     
 view: Model -> Html Msg
 view model =  
-  Card.config [ Card.outlinePrimary ]
-    |> Card.block []
+--  Card.config [ Card.outlinePrimary ]
+--    |> Card.block []
+    div[]
         [
             Tab.config TabMsg
             |> Tab.items
@@ -241,7 +242,7 @@ view model =
                             [ viewLogin model ]
                     }
                 , Tab.item
-                    { id = "register"
+                    { id = "registrarse"
                     , link = Tab.link [] [ text "Register" ]
                     , pane =
                         Tab.pane [  ]
@@ -249,9 +250,9 @@ view model =
                     }
                 ]
             |> Tab.view model.tab
-            |> Block.custom 
+       --     |> Block.custom 
         ]
-    |> Card.view
+ --   |> Card.view
 
 -- =========================================================
 -- standalone view
