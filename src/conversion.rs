@@ -1,4 +1,4 @@
-use bson;
+use mongodb::bson;
 use serde_json;
 
 use crate::error;

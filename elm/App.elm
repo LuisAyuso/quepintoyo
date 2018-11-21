@@ -36,7 +36,7 @@ type View
     | Calendar
 
 type alias Model = 
-    { logged_token: Maybe String
+    { user_token: Maybe String
     , view: View
     , login_win: Modal.Visibility
     , navbarState : Navbar.State 
@@ -129,7 +129,15 @@ update msg model =
         LoginMsg loginmsg -> 
                 let (nm, cmds) = Login.update loginmsg model.login
                 in 
-                    ({model | login = nm }, Cmd.map LoginMsg cmds)
+                    if Login.loginDone nm then
+                         ({model 
+                            | login = nm 
+                            , user_token = nm.token
+                            , login_win = Modal.hidden
+                          }
+                         , Cmd.map LoginMsg cmds)
+                    else
+                         ({model | login = nm }, Cmd.map LoginMsg cmds)
             -- cmds |> Cmd.map LoginMsg )
         NavbarMsg state -> 
             ( { model | navbarState = state }, Cmd.none )

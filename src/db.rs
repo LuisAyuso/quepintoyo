@@ -1,4 +1,3 @@
-use bson;
 use mongodb::db::ThreadedDatabase;
 use mongodb::{Client, ThreadedClient};
 
@@ -49,7 +48,10 @@ impl Connection {
     ) -> Result<bson::Document, DbError> {
         let db = self.client.db(APPDB);
         let coll = db.collection(collection);
-        match coll.find_one(Some(query), None).map_err(|_| DbError::LogicalError )?{
+        match coll
+            .find_one(Some(query), None)
+            .map_err(|_| DbError::LogicalError)?
+        {
             Some(doc) => Ok(doc),
             None => Err(DbError::NotFound),
         }
@@ -110,12 +112,12 @@ mod tests {
         assert_eq!(APPDB, "testDB");
         let conn = Connection::new("192.168.0.2", 32770).expect("must connect");
 
-        let query = doc!{
+        let query = doc! {
             "title": "Jaws",
         };
         conn.delete("movies", query).expect("must delete");
 
-        let query = doc!{
+        let query = doc! {
             "title": "Jaws",
         };
         let cursor = conn.find("movies", query).expect("must go");
@@ -127,13 +129,13 @@ mod tests {
         };
         conn.add_doc("movies", doc).expect("must add");
 
-        let query = doc!{
+        let query = doc! {
             "title": "Jaws",
         };
         let cursor = conn.find("movies", query).expect("must go");
         assert_eq!(cursor.count(), 1);
 
-        let query = doc!{
+        let query = doc! {
             "title": "Jaws",
         };
         let count = conn.delete("movies", query).expect("must delete");

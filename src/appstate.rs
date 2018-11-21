@@ -1,15 +1,17 @@
 use serde_json;
 
-use bson;
+use mongodb::bson;
 use std::collections::BTreeMap as Map;
 
-use std::sync::RwLock;
+use std::sync::{RwLock, Arc};
 
 use crate::db;
 use crate::error;
 
-
 use crate::conversion::*;
+
+use std::default::Default;
+use crypto::sha2::Sha256;
 
 // =========================================================
 
@@ -74,30 +76,16 @@ pub struct Token {
 }
 
 impl Token {
-    pub fn new() -> Result<Token, error::Crypto> {
-        use std::time::*;
-        let now = SystemTime::now();
-        use rand::{thread_rng, Rng};
-
-        // time+rand
-        let mut rng = thread_rng();
-        let t = now
-            .elapsed()
-            .map(|d| d.as_secs())
-            .map_err(|_| error::Crypto::TimeError)?;
-        let r: f64 = rng.gen();
-        let raw = format!("{}{}", t, r);
-
-        // hash
-        use sha3::{Digest, Sha3_256};
-        let mut hasher = Sha3_256::new();
-        hasher.input(raw.as_bytes());
-        let result = hasher.result();
-
-        // to hex
-        let hex_string = hex::encode(result);
-
-        Ok(Token { val: hex_string })
+    pub fn new(name: &str) -> Result<Token, error::Crypto> {
+        let header: jwt::Header = Default::default();
+        let claims = jwt::Registered {
+            iss: Some("quepintoyo.com".into()),
+            sub: Some(name.into()),
+            ..Default::default()
+        };
+        let token = jwt::Token::new(header, claims);
+        let token = token.signed(b"quepintoyo secret", Sha256::new()).map_err(|_| error::Crypto::Signature)?;
+        Ok(Token{ val: token.into() })
     }
 }
 
@@ -111,14 +99,14 @@ impl std::string::ToString for Token {
 
 pub struct AppState {
     pub db: db::Connection,
-    pub tokens: RwLock<Map<Token, UserData>>,
+    pub tokens: Arc<RwLock<Map<Token, UserData>>>,
 }
 
 impl AppState {
     pub fn new(conn: db::Connection) -> AppState {
         AppState {
             db: conn,
-            tokens: RwLock::new(Map::new()),
+            tokens: Arc::new(RwLock::new(Map::new())),
         }
     }
 }
@@ -129,8 +117,6 @@ impl AppState {
 mod tests {
 
     use super::*;
-    use bson;
-    use crate::error;
 
     #[test]
     fn to_doc() {
@@ -157,6 +143,6 @@ mod tests {
 
     #[test]
     fn conversion() {
-        let data = UserData::new("abc".to_string(), "abc".to_string());
+        let _data = UserData::new("abc".to_string(), "abc".to_string());
     }
 }

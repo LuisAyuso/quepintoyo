@@ -4,7 +4,6 @@
 extern crate rocket;
 
 #[macro_use(bson, doc)]
-extern crate bson;
 extern crate mongodb;
 
 #[macro_use]
@@ -12,7 +11,9 @@ extern crate serde_derive;
 
 extern crate hex;
 extern crate rand;
-extern crate sha3;
+
+extern crate crypto;
+extern crate jwt;
 
 #[macro_use]
 mod conversion;
@@ -24,7 +25,7 @@ mod web;
 
 fn main() {
     let db_host = "192.168.0.2";
-    let db_port = 32770;
+    let db_port = 27017;
 
     //    let db_host = "localhost";
     //    let db_port = 27017;

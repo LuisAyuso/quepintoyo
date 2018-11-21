@@ -1,7 +1,9 @@
-module Login exposing (Model, Msg, init, update, view)
+module Login exposing (Model, Msg, init, update, view, loginDone)
 
 import Json.Decode as Decode exposing (..)
 import Json.Encode as Encode exposing (..)
+
+-- import SHA1 exposing(Digest, fromString, toBase64)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -30,17 +32,19 @@ import Validate exposing (..)
 
 
 type alias Model =
-    { tab: Tab.State
-    , name: String
+    { callback: String
+    , tab: Tab.State
+    , user: String
     , password: String
     , password2: String
-    , token: String
+    , token: Maybe String
     , errorStr: Maybe String
+    , validationStr: Maybe String
     }
 
 type Msg 
     -- fill data
-    = UpdateName String 
+    = UpdateUser String 
     | UpdatePass String
     | UpdatePass2 String
 
@@ -56,7 +60,25 @@ type Msg
     | TabMsg Tab.State
 
 init: String -> (Model, Cmd Msg)
-init flags = (Model Tab.initialState "" "" "" "" Nothing, Cmd.batch [])
+init flags = 
+    ({callback= ""
+    , tab= Tab.initialState
+    , user= ""
+    , password= ""
+    , password2= ""
+    , token = Nothing
+    , errorStr= Nothing
+    , validationStr= Nothing
+    }, Cmd.batch [])
+
+-- ==================================================================
+-- ==================================================================
+
+loginDone: Model -> Bool
+loginDone model = 
+    case model.token of
+        Just _ -> True
+        Nothing -> False
 
 -- ==================================================================
 -- ==================================================================
@@ -88,15 +110,17 @@ httpPost url body =
 
 encodeLogin: String -> String -> String
 encodeLogin usr passwrd =
-    formUrlencoded [ ("user", usr)
-                   , ("password", passwrd)]
+    let pswd_digest = passwrd 
+    in
+        formUrlencoded [ ("user", usr)
+                    , ("password", pswd_digest) ]
 
 formUrlencoded : List ( String, String ) -> String
 formUrlencoded object =
     object
         |> List.map
-            (\( name, value ) ->
-                 name ++ "=" ++ value
+            (\( user, value ) ->
+                 user ++ "=" ++ value
             )
         |> String.join "&"
 
@@ -110,16 +134,16 @@ pwdValidator pwd pwd2 error=
 modelValidator: Validator String Model
 modelValidator = 
     Validate.all
-        [ ifBlank .name "Necesitamos un nombre de usuario."
-   --     , ifInvalidEmail .name (\_ -> "Por favor, revisa tu email")
+        [ ifBlank .user "Necesitamos un nombre de usuario."
+   --     , ifInvalidEmail .user (\_ -> "Por favor, revisa tu email")
         , ifBlank .password "Por favor, introduce una contraseña."
         ]
 
 modelValidator2: Validator String Model
 modelValidator2 = 
     Validate.all
-        [ ifBlank .name "Necesitamos un nombre de usuario."
-   --     , ifInvalidEmail .name (\_ -> "Por favor, revisa tu email")
+        [ ifBlank .user "Necesitamos un nombre de usuario."
+   --     , ifInvalidEmail .user (\_ -> "Por favor, revisa tu email")
         , ifBlank .password "Por favor, introduce una contraseña."
         , pwdValidator .password .password2 "Las dos contraseñas deben se ser iguales."
         ]
@@ -132,17 +156,26 @@ update msg model =
     let 
         newmodel  =
             case msg of
-                UpdateName str -> { model | name = str }
+                UpdateUser str -> { model | user = str }
                 UpdatePass str -> { model | password = str }
                 UpdatePass2 str -> { model | password2 = str }
 
                 DoLogin -> model 
-                LoginResponse _ -> model
+                LoginResponse res -> 
+                    case res of
+                        Ok token -> { model | token = Just token }
+                        Err error -> { model | errorStr = Just "usuario o contraseña no validos" }
 
                 DoRegister -> model 
                 RegisterResponse _ -> model
 
-                TabMsg state -> { model | tab = state}
+                TabMsg state -> 
+                    { model 
+                    | tab = state
+                    , user = ""
+                    , password = ""
+                    , password2 = ""
+                    }
 
         validation = 
             case Validate.validate modelValidator newmodel of
@@ -152,7 +185,7 @@ update msg model =
 
         validmodel = 
             { newmodel | 
-                errorStr = 
+                validationStr = 
                     case msg of
                         DoLogin -> validation
                         DoRegister -> validation
@@ -160,11 +193,11 @@ update msg model =
             }
 
         cmds = 
-            case validmodel.errorStr of
+            case validmodel.validationStr of
                 Nothing -> 
                     case msg of
-                        DoLogin    -> Cmd.batch [ doLogin model.name model.password |> Http.send LoginResponse ] 
-                        DoRegister -> Cmd.batch [ doRegister model.name model.password |> Http.send LoginResponse ] 
+                        DoLogin    -> Cmd.batch [ doLogin model.user model.password |> Http.send LoginResponse ] 
+                        DoRegister -> Cmd.batch [ doRegister model.user model.password |> Http.send LoginResponse ] 
                         _ -> Cmd.none
                 Just _ -> Cmd.none
     in
@@ -184,7 +217,7 @@ viewLogin model =
     div []
     [  text "login"
     ,InputGroup.config
-        (InputGroup.text [ Input.placeholder model.name, Input.onInput UpdateName])
+        (InputGroup.text [ Input.placeholder model.user, Input.onInput UpdateUser])
         |> InputGroup.predecessors
             [ InputGroup.span [] [ text "Alias" ] ]
         |> InputGroup.view
@@ -193,6 +226,9 @@ viewLogin model =
         |> InputGroup.predecessors
             [ InputGroup.span [] [ text "Contraseña" ] ]
         |> InputGroup.view
+    , case model.validationStr of
+        Nothing -> div [][]
+        Just str -> Alert.simpleWarning [] [ text str ]
     , case model.errorStr of
         Nothing -> div [][]
         Just str -> Alert.simpleDanger [] [ text str ]
@@ -205,7 +241,7 @@ viewRegister model =
     div []
     [  text "Registrarse"
     ,InputGroup.config
-        (InputGroup.text [ Input.placeholder model.name, Input.onInput UpdateName])
+        (InputGroup.text [ Input.placeholder model.user, Input.onInput UpdateUser])
         |> InputGroup.predecessors
             [ InputGroup.span [] [ text "Alias" ] ]
         |> InputGroup.view

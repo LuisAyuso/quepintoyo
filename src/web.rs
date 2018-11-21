@@ -11,9 +11,8 @@ use std::str;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
-use bson;
 use crate::conversion::*;
-use crate::error;
+use mongodb::bson;
 use serde_json;
 
 use crate::appstate::AppState as App;
@@ -77,8 +76,13 @@ fn login(data: Form<Login>, state: State<App>) -> Result<String, Status> {
 
     let entry = Login::from_bson(entry)?;
 
-    let tok = Token::new()?;
-    state.tokens.write().map_err(|_|Status::InternalServerError)?.entry(tok.clone()).or_insert(entry);
+    let tok = Token::new(data.user.as_str())?;
+    state
+        .tokens
+        .write()
+        .map_err(|_| Status::InternalServerError)?
+        .entry(tok.clone())
+        .or_insert(entry);
     Ok(tok.to_string())
 }
 
@@ -86,7 +90,7 @@ fn login(data: Form<Login>, state: State<App>) -> Result<String, Status> {
 fn register(data: Form<Login>, state: State<App>) -> Result<String, Status> {
     let data = data.into_inner();
 
-    let query = doc!{
+    let query = doc! {
         "username": data.user.clone(),
     };
     let res = state.db.find("users", query);
@@ -108,8 +112,13 @@ fn register(data: Form<Login>, state: State<App>) -> Result<String, Status> {
             if let bson::Bson::Document(doc) = user_entry {
                 return match state.db.add_doc("users", doc) {
                     Ok(_) => {
-                        let tok = Token::new()?;
-                        state.tokens.write().map_err(|_|Status::InternalServerError)?.entry(tok.clone()).or_insert(data);
+                        let tok = Token::new(data.user.clone().as_str())?;
+                        state
+                            .tokens
+                            .write()
+                            .map_err(|_| Status::InternalServerError)?
+                            .entry(tok.clone())
+                            .or_insert(data);
                         Ok(tok.to_string())
                     }
                     Err(_) => Err(Status::InternalServerError),

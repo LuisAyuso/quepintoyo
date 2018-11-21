@@ -13,8 +13,11 @@ bson = "0.13.0"
 serde = "1.0.80"
 serde_derive = "1.0.80"
 serde_json = "1.0.33"
-jsonwebtoken = "5.0.1"
 
-sha3 = "0.8.1"
+jsonwebtoken = "5.0.1"
+rust-crypto = "0.2.36"
+
 rand = "0.6.0"
 hex = "0.3.2"
+
+jwt = "0.4.0"
