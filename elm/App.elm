@@ -37,6 +37,7 @@ type View
 
 type alias Model = 
     { user_token: Maybe String
+    , user_name: Maybe String
     , view: View
     , login_win: Modal.Visibility
     , navbarState : Navbar.State 
@@ -64,7 +65,7 @@ init _ =
         feed = Feed
         (navbar, cmds) = Navbar.initialState NavbarMsg
         modal = Modal.shown -- Modal.hidden
-    in (Model Nothing feed modal navbar lm , cmds)
+    in (Model Nothing Nothing feed modal navbar lm , cmds)
     -- in (Model Nothing Kanban emp Modal.shown lm, Cmd.none)
 -- ( emptyModel , Cmd.batch [ sendLoad appKey ]) 
 
@@ -133,6 +134,7 @@ update msg model =
                          ({model 
                             | login = nm 
                             , user_token = nm.token
+                            , user_name = Just nm.user
                             , login_win = Modal.hidden
                           }
                          , Cmd.map LoginMsg cmds)
@@ -155,6 +157,30 @@ subscriptions model =
 -- ===============================================
 -- ===============================================
 
+activeKanban: Model -> List (Attribute msg) -> List (Html msg) -> Navbar.Item msg
+activeKanban model =
+    case model.view of
+        Kanban _ -> Navbar.itemLinkActive
+        _ -> Navbar.itemLink
+
+activeFeed: Model -> List (Attribute msg) -> List (Html msg) -> Navbar.Item msg
+activeFeed model =
+    case model.view of
+        Feed -> Navbar.itemLinkActive
+        _ -> Navbar.itemLink
+
+activeCalendar: Model -> List (Attribute msg) -> List (Html msg) -> Navbar.Item msg
+activeCalendar model =
+    case model.view of
+        Calendar -> Navbar.itemLinkActive
+        _ -> Navbar.itemLink
+
+activeConfig: Model -> List (Attribute msg) -> List (Html msg) -> Navbar.Item msg
+activeConfig model =
+    case model.view of
+        Settings -> Navbar.itemLinkActive
+        _ -> Navbar.itemLink
+
 json2str: Enco.Value -> String
 json2str value = Enco.encode 2 value
 
@@ -166,10 +192,16 @@ view model =
         |> Navbar.withAnimation
         |> Navbar.brand [ href "#"] [ text "QuePintoYo"]
         |> Navbar.items
-            [ Navbar.itemLink [href "#"] [ text "Feed"]
-            , Navbar.itemLink [href "#"] [ text "Trabajos"]
-            , Navbar.itemLink [href "#"] [ text "Calendario"]
-            , Navbar.itemLink [href "#"] [ text "Configuración"]
+            [ (activeFeed model) [href "#"] [ text "Feed"] 
+            , (activeKanban model) [href "#"] [ text "Trabajos"]
+            , (activeCalendar model) [href "#"] [ text "Calendario"] 
+            , (activeConfig model) [href "#"] [ text "Configuración"] 
+            ]
+        |> Navbar.customItems
+            [ 
+                case model.user_name of
+                    Just t -> Navbar.textItem [  class "muted" ] [ "usuario: " ++ t |> text]
+                    Nothing -> Navbar.textItem [ class "muted" ] [ text "no estas registrado" ]
             ]
         |> Navbar.view model.navbarState
     ,
