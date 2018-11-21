@@ -38,3 +38,16 @@ impl std::convert::From<crate::error::Crypto> for rocket::http::Status {
         rocket::http::Status::InternalServerError
     }
 }
+
+#[derive(Debug)]
+pub enum RequestError {
+    NotAValidToken,
+    NoToken
+}
+
+impl std::convert::From<crate::error::RequestError> for rocket::http::Status {
+    fn from(error: crate::error::RequestError) -> rocket::http::Status {
+        println!("error: {:?}", error);
+        rocket::http::Status::Unauthorized
+    }
+}

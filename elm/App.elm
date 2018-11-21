@@ -3,6 +3,7 @@ port module Main exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
+import Http exposing (..)
 import Browser exposing (UrlRequest)
 
 import Json.Decode as Deco exposing (..) 
@@ -26,6 +27,7 @@ port sendLoad   : String -> Cmd msg
 port recvLoad   : (String -> msg) -> Sub msg
 
 appKey = "myApp"
+sessionKey = "lastSession"
 
 -- =========================================================
 
@@ -42,6 +44,7 @@ type alias Model =
     , login_win: Modal.Visibility
     , navbarState : Navbar.State 
     , login: Login.Model  
+    , error: Maybe String
     }
 
 type Msg 
@@ -65,17 +68,33 @@ init _ =
         feed = Feed
         (navbar, cmds) = Navbar.initialState NavbarMsg
         modal = Modal.shown -- Modal.hidden
-    in (Model Nothing Nothing feed modal navbar lm , cmds)
+    in 
+        (Model Nothing Nothing feed modal navbar lm Nothing
+        , Cmd.batch [ cmds, sendLoad sessionKey ])
     -- in (Model Nothing Kanban emp Modal.shown lm, Cmd.none)
 -- ( emptyModel , Cmd.batch [ sendLoad appKey ]) 
 
 -- ===============================================
 -- ===============================================
 
-loadJobs: Model -> String -> Model
-loadJobs model data = model
-    -- {model | jobs = Jobs.decode data }
+loadData: Model -> String -> (Model, Cmd Msg)
+loadData model data =
+    let 
+        asSession = Deco.decodeString decodeSession data
+        asJobs = Jobs.decode data
+    in
+        case (asSession, asJobs) of
+            (Err _, Just s) -> (loadJobs model s, Cmd.none)
+            (Ok s, Nothing) -> loadSession model s
+            (Ok _, Just _) -> ({model | error = Just "both right?"}, Cmd.none)
+            _ -> ({model | error = Just "read error"}, Cmd.none)
 
+
+loadJobs: Model -> Jobs.Model -> Model
+loadJobs model data = 
+    case model.view of
+        Kanban _ -> { model | view = Kanban data }
+        _ -> model
 
 saveJobs: Jobs.Model -> Cmd Msg
 saveJobs jobs =
@@ -89,6 +108,43 @@ saveJobs jobs =
         |> sendSave
         ]
 
+encodeSession usr token =
+        Enco.object
+      [ ("user", Enco.string usr)
+      , ("token", Enco.string token)
+      ]
+
+toPair: a -> b -> (a, b)
+toPair a b = (a, b)
+
+decodeSession : Deco.Decoder (String, String)
+decodeSession =
+  map2 toPair
+      (Deco.field "user" Deco.string)
+      (Deco.field "token" Deco.string)
+
+saveSession: String -> String -> Cmd Msg
+saveSession user token =
+    let 
+        withKey = \data -> (sessionKey, data)
+    in
+        encodeSession user token 
+            |> Enco.encode 0 
+            |> withKey 
+            |> sendSave
+
+loadSession: Model -> (String, String) -> (Model, Cmd Msg)
+loadSession model (usr, token) = 
+        -- { model | user_name = Just usr
+        --         , user_token = Just token 
+        --         , login_win = Modal.hidden
+        -- }
+
+      --  ( model, testSession token )
+      ( model,  Login.testSession token |> Cmd.map LoginMsg)
+
+-- ===============================================
+-- ===============================================
 
 updateJobs: Jobs.Msg -> Jobs.Model -> Maybe Jobs.Model
 updateJobs msg jobs =
@@ -110,8 +166,7 @@ update msg model =
     case msg of
         Noop -> (model, Cmd.none )
 
-        Load data -> (model, Cmd.none)
-            --(loadJobs model data, Cmd.batch [])
+        Load data -> loadData model data
         SaveAll -> (model
                    , upCmdKanban model (\jm -> saveJobs jm) )
 
@@ -129,15 +184,18 @@ update msg model =
     --        )
         LoginMsg loginmsg -> 
                 let (nm, cmds) = Login.update loginmsg model.login
-                in 
-                    if Login.loginDone nm then
-                         ({model 
+                    newmodel = {model 
                             | login = nm 
                             , user_token = nm.token
                             , user_name = Just nm.user
                             , login_win = Modal.hidden
-                          }
-                         , Cmd.map LoginMsg cmds)
+                            }
+                    user = Maybe.withDefault "" newmodel.user_name
+                    token = Maybe.withDefault "" newmodel.user_token 
+                in 
+                    if Login.loginDone nm then
+                        (newmodel
+                        , Cmd.batch [ saveSession user token ])
                     else
                          ({model | login = nm }, Cmd.map LoginMsg cmds)
             -- cmds |> Cmd.map LoginMsg )
@@ -149,10 +207,10 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.batch [
-    Navbar.subscriptions model.navbarState NavbarMsg
-    ]
-    -- recvLoad Load
+    Sub.batch 
+        [ Navbar.subscriptions model.navbarState NavbarMsg
+        , recvLoad Load
+        ]
 
 -- ===============================================
 -- ===============================================

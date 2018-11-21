@@ -71,9 +71,7 @@ serialize_tools!(UserData);
 // =========================================================
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub struct Token {
-    val: String,
-}
+pub struct Token (String);
 
 impl Token {
     pub fn new(name: &str) -> Result<Token, error::Crypto> {
@@ -85,13 +83,45 @@ impl Token {
         };
         let token = jwt::Token::new(header, claims);
         let token = token.signed(b"quepintoyo secret", Sha256::new()).map_err(|_| error::Crypto::Signature)?;
-        Ok(Token{ val: token.into() })
+        Ok(Token(token.into() ))
     }
 }
 
 impl std::string::ToString for Token {
     fn to_string(&self) -> String {
-        self.val.clone()
+        self.0.clone()
+    }
+}
+
+impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for Token {
+    type Error = crate::error::RequestError;
+
+    fn from_request(request: &'a rocket::request::Request<'r>) -> rocket::request::Outcome<Self, Self::Error> {
+        use rocket::Outcome::{Failure, Success};
+        use rocket::http::Status;
+        let keys: Vec<_> = request.headers().get("Authorization").collect();
+        match keys.len() {
+            0 => Failure((Status::Unauthorized, error::RequestError::NoToken)),
+            1 => {
+                println!("{}", keys[0]);
+                let key = keys[0];
+                if !key.starts_with("bearer "){
+                    return Failure((Status::Unauthorized, error::RequestError::NoToken));
+                }
+                let (_, key) = key.split_at(7);
+
+                let state  = request.guard::<rocket::State<AppState>>().expect("we must have a state");
+                let tok = Token(key.to_string());
+                state.tokens.write().map(|map|{
+                            let session = map.get(&tok);
+                            match session {
+                                Some(_) => Success(Token("success".to_string())),
+                                None =>   Failure((Status::Unauthorized, error::RequestError::NoToken)),
+                        }
+                        }).unwrap()
+            }
+            _ => Failure((Status::Unauthorized, error::RequestError::NoToken)),
+        }
     }
 }
 

@@ -20,6 +20,9 @@ use crate::appstate::Token;
 
 // =========================================================
 
+
+// =========================================================
+
 // const ELM :&'static str =  "C:\\Users\\Luis\\AppData\\Roaming\\npm\\elm.cmd";
 const ELM: &'static str = "elm";
 const TMP_SCRIPT_FOLDER: &'static str = ".tmp_scripts";
@@ -187,12 +190,19 @@ fn script(scriptfile: &RawStr) -> Result<NamedFile, Status> {
 
 // =========================================================
 
+#[get("/check_token")]
+fn check_token(token: Token) -> Result<String, Status> {
+    Ok("".to_string())
+}
+
+// =========================================================
+
 pub fn kickstart(app: App) {
     rocket::ignite()
         .manage(app)
         .mount(
             "/",
-            routes![index, static_files, script, upload, login, register],
+            routes![index, static_files, script, upload, login, register, check_token]
         )
         .launch();
 }

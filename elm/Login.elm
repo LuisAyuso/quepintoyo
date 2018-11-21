@@ -1,4 +1,4 @@
-module Login exposing (Model, Msg, init, update, view, loginDone)
+module Login exposing (Model, Msg, init, update, view, loginDone, testSession)
 
 import Json.Decode as Decode exposing (..)
 import Json.Encode as Encode exposing (..)
@@ -123,6 +123,27 @@ formUrlencoded object =
                  user ++ "=" ++ value
             )
         |> String.join "&"
+
+buildRequest: String -> Http.Request String
+buildRequest token  = 
+  let 
+    headers =
+              [ Http.header "Authorization" ("Bearer " ++ token) 
+              ]
+  in
+    Http.request
+    { body = Http.emptyBody
+    , expect = Http.expectString 
+    , headers = headers
+    , method = "GET"
+    , timeout = Nothing 
+    , url = "check_token"
+    , withCredentials = False
+    } 
+
+testSession: String -> Cmd Msg
+testSession token  = 
+    buildRequest token |> Http.send LoginResponse
 
 -- ==================================================================
 -- ==================================================================
