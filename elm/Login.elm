@@ -56,6 +56,9 @@ type Msg
     | DoRegister
     | RegisterResponse (Result Http.Error String)
 
+    -- test of an existing token
+    | TestResponse (Result Http.Error String)
+
     -- some components state
     | TabMsg Tab.State
 
@@ -141,9 +144,13 @@ buildRequest token  =
     , withCredentials = False
     } 
 
-testSession: String -> Cmd Msg
-testSession token  = 
-    buildRequest token |> Http.send LoginResponse
+testSession: Model -> String -> String -> (Model, Cmd Msg)
+testSession model user_name test_token  = 
+    ({model |
+        user = user_name
+    }
+    , buildRequest test_token |> Http.send TestResponse
+    )
 
 -- ==================================================================
 -- ==================================================================
@@ -189,6 +196,11 @@ update msg model =
 
                 DoRegister -> model 
                 RegisterResponse _ -> model
+
+                TestResponse res -> 
+                    case res of
+                        Ok token -> { model | token = Just token }
+                        Err error ->  model 
 
                 TabMsg state -> 
                     { model 
@@ -300,7 +312,7 @@ view model =
                     }
                 , Tab.item
                     { id = "registrarse"
-                    , link = Tab.link [] [ text "Register" ]
+                    , link = Tab.link [] [ text "Registrarse" ]
                     , pane =
                         Tab.pane [  ]
                             [ viewRegister model ]

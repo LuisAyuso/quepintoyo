@@ -57,33 +57,73 @@ pub struct UserData {
     pub password: String,
 }
 
-impl UserData {
-    pub fn new(name: String, password: String) -> UserData {
-        UserData {
-            user: name,
-            password: password,
-        }
-    }
-}
-
 serialize_tools!(UserData);
 
 // =========================================================
 
+const KEY: &'static[u8] = b"quepintoyo secret";
+
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct Token (String);
+type TokType = jwt::Token<jwt::Header, jwt::Claims>;
 
 impl Token {
+
     pub fn new(name: &str) -> Result<Token, error::Crypto> {
         let header: jwt::Header = Default::default();
-        let claims = jwt::Registered {
+        let mut claims = jwt::Claims::new(jwt::Registered {
             iss: Some("quepintoyo.com".into()),
             sub: Some(name.into()),
             ..Default::default()
-        };
+        });
+
+        use rustc_serialize::json::Json;
+        let name_json = Json::String(name.to_string());
+        claims.private.entry("user".to_string()).or_insert(name_json);
+
         let token = jwt::Token::new(header, claims);
-        let token = token.signed(b"quepintoyo secret", Sha256::new()).map_err(|_| error::Crypto::Signature)?;
+        let token = token.signed(KEY, Sha256::new()).map_err(|_| error::Crypto::Signature)?;
         Ok(Token(token.into() ))
+    }
+
+    pub fn get_user_name(&self) -> Result<String, error::Crypto>{ 
+        match Self::inner_token_from_str(self.0.as_str()){
+            Ok(tok) =>{
+                match tok.claims.private.get("user"){
+                    Some(name) =>{
+                        let decoded = name.as_string().ok_or_else(||error::Crypto::InvalidUserName)?;
+                        Ok(decoded.to_string())
+                    }
+                    _ => Err(error::Crypto::InvalidToken)
+                }
+            }
+            _ => Err(error::Crypto::InvalidToken)
+        }
+
+    }
+
+    pub fn from_str(token_str: &str) -> Result<Token, error::Crypto>{
+
+        match Self::inner_token_from_str(token_str) {
+            Err(_) => Err(error::Crypto::InvalidToken),
+            Ok(t) => {
+                if t.verify(KEY, Sha256::new()){
+                    Ok(Token(token_str.to_string()))
+                }
+                else{
+                    Err(error::Crypto::InvalidToken)
+                }
+            }
+        }
+    }
+
+    fn inner_token_from_str(token_str: &str) -> Result<TokType, error::Crypto>{
+        match TokType::parse(token_str) {
+            Err(_) => Err(error::Crypto::InvalidToken),
+            Ok(t) => {
+                    Ok(t)
+            }
+        }
     }
 }
 
@@ -103,22 +143,18 @@ impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for Token {
         match keys.len() {
             0 => Failure((Status::Unauthorized, error::RequestError::NoToken)),
             1 => {
+
                 println!("{}", keys[0]);
                 let key = keys[0];
-                if !key.starts_with("bearer "){
+                if !key.starts_with("Bearer "){
                     return Failure((Status::Unauthorized, error::RequestError::NoToken));
                 }
-                let (_, key) = key.split_at(7);
+                let (_, token) = key.split_at(7);
 
-                let state  = request.guard::<rocket::State<AppState>>().expect("we must have a state");
-                let tok = Token(key.to_string());
-                state.tokens.write().map(|map|{
-                            let session = map.get(&tok);
-                            match session {
-                                Some(_) => Success(Token("success".to_string())),
-                                None =>   Failure((Status::Unauthorized, error::RequestError::NoToken)),
-                        }
-                        }).unwrap()
+                match Token::from_str(token){
+                    Ok(t)  => Success(t),
+                    Err(_) => Failure((Status::Unauthorized, error::RequestError::NotAValidToken)),
+                }
             }
             _ => Failure((Status::Unauthorized, error::RequestError::NoToken)),
         }

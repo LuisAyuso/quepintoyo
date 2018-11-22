@@ -1,5 +1,6 @@
-module Tools exposing (inExclusiveRange, get, set)
+module Tools exposing (inExclusiveRange, get, set, json2str)
 
+import Json.Encode as Enco exposing (..) 
 
 inExclusiveRange: number -> (number, number) -> Bool
 inExclusiveRange n (min, max) =
@@ -27,3 +28,7 @@ set n (f, s, t) val=
         (f, s, val)
     else
         (f, s, t)
+
+
+json2str: Enco.Value -> String
+json2str value = Enco.encode 2 value

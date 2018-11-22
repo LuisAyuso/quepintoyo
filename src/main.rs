@@ -8,12 +8,15 @@ extern crate mongodb;
 
 #[macro_use]
 extern crate serde_derive;
+#[macro_use]
+extern crate serde_json;
 
 extern crate hex;
 extern crate rand;
 
 extern crate crypto;
 extern crate jwt;
+extern crate rustc_serialize;
 
 #[macro_use]
 mod conversion;

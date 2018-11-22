@@ -1,4 +1,4 @@
-module Jobs exposing (Model, Msg(..), viewJobs, viewGrid, viewNewButton, viewNewModal, update, init, encode, decode)
+module Jobs exposing (Model, Msg(..), viewJobs, viewGrid, viewNewButton, viewNewModal, view, update, init, encode, decode)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -33,8 +33,8 @@ import Json.Decode as Deco exposing (..)
 
 import Tools exposing(..)
 
-init: Model
-init = Model Modal.hidden None 0 initSort []
+init: String -> (Model, Cmd Msg)
+init flags = (Model Modal.hidden None 0 initSort [], Cmd.none)
      -- [ Job 1 "massive darkness" initTasks Simple Nothing
      -- , Job 2 "star trek" initTasks Simple Nothing ]
 
@@ -176,21 +176,21 @@ type Msg = Noop
         | SortBy Int OrderBy
 
 
-update: Msg -> Model -> Model
+update: Msg -> Model -> (Model, Cmd msg)
 update msg model =
     case msg of    
 
-        Noop -> model
+        Noop -> (model, Cmd.none)
 
         CreateJob -> 
-            { model | 
+            ({ model | 
                 create = Modal.shown,
                 creating = Job model.nextId "" "" initTasks [] Simple Nothing
                             |> Create
-            }
+            }, Cmd.none)
 
         ChangeName newname -> 
-            case model.creating of
+            (case model.creating of
                 Create job -> 
                     { model 
                     | creating = Job job.id newname job.desc job.tasks [] Simple Nothing
@@ -202,9 +202,10 @@ update msg model =
                                 |> Edit
                     }
                 None -> model
+            , Cmd.none)
 
         ChangeDesc newdesc -> 
-            case model.creating of
+            (case model.creating of
                 Create job -> 
                     { model 
                     | creating = Job job.id job.name newdesc job.tasks [] Simple Nothing 
@@ -216,9 +217,10 @@ update msg model =
                                 |> Edit
                     }
                 None -> model
+            , Cmd.none)
 
         DoneCreating -> 
-            case model.creating of
+            (case model.creating of
                 None -> model
                 Create newjob ->
                     { model | 
@@ -233,17 +235,19 @@ update msg model =
                         creating = None,
                         jobs = setJob newjob model.jobs
                     }
+            , Cmd.none)
 
-        CancelCreating -> { model | create = Modal.hidden }
+        CancelCreating -> ({ model | create = Modal.hidden } , Cmd.none)
 
         EditJob jobId -> 
-            case getJob jobId model.jobs of
+            (case getJob jobId model.jobs of
                 Nothing -> model
                 Just job -> 
                         { model | 
                             create = Modal.shown,
                             creating = Edit job
                         }
+            , Cmd.none)
 
         UpdateJob jobId viewKind -> 
             let 
@@ -263,6 +267,7 @@ update msg model =
                                 editing =  Just job.tasks
                             }
             in
+            (
                 case viewKind of
                     Extended -> 
                         { model | 
@@ -272,14 +277,17 @@ update msg model =
                         { model | 
                             jobs = model.jobs |> mapif cond commitchanges
                         }
+            , Cmd.none)
 
         UpdateTask jobId taskName enabled -> 
-            { model | 
+            ({ model | 
                 jobs = (updateTask jobId taskName enabled model.jobs) 
             }
+            , Cmd.none)
 
         SortBy col by ->  
-            { model | sort =  by |> Tools.set col model.sort }
+            ({ model | sort =  by |> Tools.set col model.sort }
+            , Cmd.none)
 
 
 -- =================================================================
@@ -606,33 +614,56 @@ viewNewModal model =
             Create job -> modalDialog "Nuevo Trabajo" job
             Edit job   -> modalDialog "Editar Trabajo" job
 
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.none
+
+-- ============================================
+-- server interaction
+
+-- saveJobs: Model -> Cmd Msg
+-- saveJobs jobs =
+    -- let 
+        -- withKey = \data -> ("jobs", data)
+    -- in
+    --    Cmd.batch [ jobs 
+        -- |> encode 
+        -- |> json2str 
+        -- |> withKey 
+        -- |> sendSave
+        -- ]
+
+view: Model -> Html Msg
+view model = 
+    div [] 
+        [ viewGrid model
+        , viewNewButton model 
+        , viewNewModal model 
+        ]
 
 -- ============================================
 --   make an app
 
-main = Browser.sandbox { init = init, update = update, view = viewStandAlone }
+main = Browser.element { init = init, update = update, view = viewStandAlone, subscriptions = subscriptions }
 
 
 viewStandAlone: Model -> Html Msg
 viewStandAlone model = 
-        let 
-            codedStr =  model |> encode |> Enco.encode 2
-            decoded = decode codedStr
-        in
-    div [] 
-    [ CDN.stylesheet 
-    , viewGrid model
-    , viewNewButton model 
-    , viewNewModal model 
-    ,div[]
-        [ text "encoded:"
-        , text codedStr
+    let 
+        codedStr =  model |> encode |> Enco.encode 2
+        decoded = decode codedStr
+    in div [] 
+        [ CDN.stylesheet 
+        , view model
+        ,div[]
+            [ text "encoded:"
+            , text codedStr
+            ]
+        ,div[]
+            [ text "decoded:"
+            ,  
+                case decoded of
+                    Nothing -> text "caca"
+                    Just val -> viewGrid val
+            ]
         ]
-    ,div[]
-        [ text "decoded:"
-        ,  
-            case decoded of
-                Nothing -> text "caca"
-                Just val -> viewGrid val
-        ]
-    ]

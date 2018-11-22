@@ -4,7 +4,9 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import Http exposing (..)
-import Browser exposing (UrlRequest)
+import Browser exposing (..)
+import Browser.Navigation exposing (..)
+import Url exposing(..)
 
 import Json.Decode as Deco exposing (..) 
 import Json.Encode as Enco exposing (..) 
@@ -13,8 +15,13 @@ import Bootstrap.Button as Button
 import Bootstrap.Modal as Modal
 import Bootstrap.Navbar as Navbar
 
+
 import Jobs exposing (..)
 import Login exposing (..)
+import Tools exposing(..)
+import Route exposing(..)
+import Feed exposing(..)
+
 
 -- =========================================================
 
@@ -33,7 +40,7 @@ sessionKey = "lastSession"
 
 type View 
     = Kanban Jobs.Model
-    | Feed
+    | Feed Feed.Model
     | Settings
     | Calendar
 
@@ -48,31 +55,47 @@ type alias Model =
     }
 
 type Msg 
-    = Noop 
+    = NoOp 
     | Load String
     | SaveAll
     | DelAll
+
+    -- messages of views
     | JobsMsg Jobs.Msg
+    | FeedMsg Feed.Msg
+
+    -- messages of locally managed comps
     | LoginMsg Login.Msg
     | NavbarMsg Navbar.State
+    | CloseSession
+
+    -- Navigation
+    | ChangeView Route.Route
 
 -- ===============================================
 -- ===============================================
 
-emptyJobs = Jobs.init
+initKanban: (Jobs.Model, Cmd Jobs.Msg)
+initKanban =
+        Jobs.init ""
+
+initFeed: (Feed.Model, Cmd Feed.Msg)
+initFeed = Feed.init ""
+
+initDefaultView: (View, Cmd Msg)
+initDefaultView =
+    let (md, cmd) = initFeed 
+    in (Feed md, Cmd.map FeedMsg cmd)
 
 init: String -> (Model, Cmd Msg)
 init _ = 
     let (lm, _) =  Login.init ""
-        kanban = Kanban emptyJobs
-        feed = Feed
+        (default_view, view_cmds) = initDefaultView
         (navbar, cmds) = Navbar.initialState NavbarMsg
         modal = Modal.shown -- Modal.hidden
     in 
-        (Model Nothing Nothing feed modal navbar lm Nothing
-        , Cmd.batch [ cmds, sendLoad sessionKey ])
-    -- in (Model Nothing Kanban emp Modal.shown lm, Cmd.none)
--- ( emptyModel , Cmd.batch [ sendLoad appKey ]) 
+        (Model Nothing Nothing default_view modal navbar lm Nothing
+        , Cmd.batch [ cmds, view_cmds,  sendLoad sessionKey, sendLoad appKey ])
 
 -- ===============================================
 -- ===============================================
@@ -135,20 +158,14 @@ saveSession user token =
 
 loadSession: Model -> (String, String) -> (Model, Cmd Msg)
 loadSession model (usr, token) = 
-        -- { model | user_name = Just usr
-        --         , user_token = Just token 
-        --         , login_win = Modal.hidden
-        -- }
-
-      --  ( model, testSession token )
-      ( model,  Login.testSession token |> Cmd.map LoginMsg)
+    let
+        (log_mod, cmds) = Login.testSession model.login usr token 
+    in
+      ( {model | login = log_mod }, Cmd.map LoginMsg cmds)
 
 -- ===============================================
 -- ===============================================
 
-updateJobs: Jobs.Msg -> Jobs.Model -> Maybe Jobs.Model
-updateJobs msg jobs =
-        Jobs.update msg jobs |> Just
 
 upModelKanban: Model -> (m -> m) -> Model
 upModelKanban model callback =
@@ -164,24 +181,24 @@ update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
 
     case msg of
-        Noop -> (model, Cmd.none )
+        NoOp -> (model, Cmd.none )
 
         Load data -> loadData model data
         SaveAll -> (model
-                   , upCmdKanban model (\jm -> saveJobs jm) )
+                   , upCmdKanban model (\jm -> saveJobs jm) 
+                   )
 
         DelAll ->  (model, Cmd.batch [ sendDelAll appKey ]) 
 
-        JobsMsg jobsmsg -> (model, Cmd.batch [])
-    --        let 
-    --            newjobs = updateJobs jobsmsg model.view
-    --        in
-    --        ( { model | jobs = newjobs }
-    --        , case jobsmsg of
-    --            Jobs.DoneCreating -> saveJobs newjobs [] |> Cmd.batch 
-    --            Jobs.UpdateJob _ _ -> saveJobs newjobs [] |> Cmd.batch 
-    --            _ ->  Cmd.batch []
-    --        )
+        JobsMsg jobsmsg ->
+            case model.view of
+                Kanban md -> 
+                    let (newmod, cmds) = Jobs.update jobsmsg md 
+                    in ({model | view = Kanban newmod}, cmds)
+                _ -> (model, Cmd.none)
+
+        FeedMsg feedmsg -> (model, Cmd.none)
+
         LoginMsg loginmsg -> 
                 let (nm, cmds) = Login.update loginmsg model.login
                     newmodel = {model 
@@ -198,10 +215,46 @@ update msg model =
                         , Cmd.batch [ saveSession user token ])
                     else
                          ({model | login = nm }, Cmd.map LoginMsg cmds)
-            -- cmds |> Cmd.map LoginMsg )
+
         NavbarMsg state -> 
             ( { model | navbarState = state }, Cmd.none )
 
+        CloseSession ->
+            let 
+                (newlogin, _) = Login.init ""
+                (newview, cmds) = initDefaultView
+            in
+                ({model | user_token = Nothing
+                    , user_name = Nothing
+                    , login = newlogin 
+                    , login_win = Modal.shown
+                    , view = newview
+                 }
+                , Cmd.batch [ sendDelAll sessionKey, cmds ])
+
+        ChangeView r -> 
+            let 
+                doNothing = (model, Cmd.none)
+                (jbs, jobscmds) = initKanban
+                (feed, feedcmds) = initFeed
+            in case r of
+                Route.Home -> doNothing
+                Route.Feed -> 
+                    case model.view of
+                        Feed _-> doNothing
+                        _ ->  ({model | view = Feed feed}, Cmd.map FeedMsg feedcmds)
+                Route.Kanban -> 
+                    case model.view of
+                        Kanban _ -> doNothing
+                        _ ->  ({model | view = Kanban jbs }, Cmd.map JobsMsg jobscmds)
+                Route.Calendar -> 
+                    case model.view of
+                        Calendar -> doNothing
+                        _ ->  ({model | view = Calendar}, Cmd.none)
+                Route.Settings -> 
+                    case model.view of
+                        Settings -> doNothing
+                        _ ->  ({model | view = Settings}, Cmd.none)
 
 -- ===============================================
 
@@ -224,7 +277,7 @@ activeKanban model =
 activeFeed: Model -> List (Attribute msg) -> List (Html msg) -> Navbar.Item msg
 activeFeed model =
     case model.view of
-        Feed -> Navbar.itemLinkActive
+        Feed _ -> Navbar.itemLinkActive
         _ -> Navbar.itemLink
 
 activeCalendar: Model -> List (Attribute msg) -> List (Html msg) -> Navbar.Item msg
@@ -239,9 +292,6 @@ activeConfig model =
         Settings -> Navbar.itemLinkActive
         _ -> Navbar.itemLink
 
-json2str: Enco.Value -> String
-json2str value = Enco.encode 2 value
-
 view: Model -> Html Msg
 view model =
     div[]
@@ -250,26 +300,30 @@ view model =
         |> Navbar.withAnimation
         |> Navbar.brand [ href "#"] [ text "QuePintoYo"]
         |> Navbar.items
-            [ (activeFeed model) [href "#"] [ text "Feed"] 
-            , (activeKanban model) [href "#"] [ text "Trabajos"]
-            , (activeCalendar model) [href "#"] [ text "Calendario"] 
-            , (activeConfig model) [href "#"] [ text "Configuración"] 
+            [ (activeFeed model) [href "#feed"] [ text "Feed"] 
+            , (activeKanban model) [href "#kanban"] [ text "Trabajos"]
+            , (activeCalendar model) [href "#calendar"] [ text "Calendario"] 
+            , (activeConfig model) [href "#settings"] [ text "Configuración"] 
             ]
         |> Navbar.customItems
             [ 
                 case model.user_name of
                     Just t -> Navbar.textItem [  class "muted" ] [ "usuario: " ++ t |> text]
                     Nothing -> Navbar.textItem [ class "muted" ] [ text "no estas registrado" ]
+                , Navbar.textItem [ class "muted" ] 
+                    [ Button.button [ Button.secondary
+                                    , Button.small
+                                    , Button.onClick CloseSession
+                                    ] 
+                        [ text "Salir"]
+                    ]
             ]
         |> Navbar.view model.navbarState
     ,
-
         case model.view of
             Kanban jbs ->
                 div []
-                [ Html.map  (\msg -> JobsMsg msg)  (Jobs.viewGrid      jbs)
-                , Html.map  (\msg -> JobsMsg msg)  (Jobs.viewNewButton jbs)
-                , Html.map  (\msg -> JobsMsg msg)  (Jobs.viewNewModal  jbs)
+                [ Html.map  (\msg -> JobsMsg msg)  (Jobs.view jbs)
                 , Button.button [ Button.secondary
                                 , Button.onClick SaveAll
                                 ] 
@@ -279,11 +333,11 @@ view model =
                                 ] 
                     [ text "Borrar todo"]
                 ]
-            Feed -> text "feed"
+            Feed f -> Html.map   (\msg -> FeedMsg msg)   (Feed.view f)
             Settings -> text "settings"
             Calendar -> text"calendar"
 
-        , Modal.config (Noop)
+        , Modal.config (NoOp)
             |> Modal.large
             |> Modal.hideOnBackdropClick False
             --|> Modal.h3 [] [ text "hello" ]
@@ -295,9 +349,33 @@ view model =
 -- ===============================================
 -- ===============================================
 
-main = Browser.element { 
-        init = init, 
+
+onUrlRequest: UrlRequest -> Msg
+onUrlRequest req = 
+    case req of 
+        Internal url ->
+            case Route.fromUrl url of
+                Nothing -> NoOp
+                Just r -> ChangeView r
+        External url -> NoOp
+
+onUrlChange: Url -> Msg
+onUrlChange url = ChangeView Route.Kanban
+
+viewDoc model = 
+     [ view model ] |> Browser.Document "QuePintoYo"
+
+initApp: Maybe String -> Url -> Key -> ( Model, Cmd Msg )
+initApp flags url key = init ""
+
+-- ===============================================
+-- ===============================================
+
+main = Browser.application { 
+        init = initApp, 
         update = update, 
-        view = view , 
-        subscriptions = subscriptions
+        view = viewDoc , 
+        subscriptions = subscriptions,
+        onUrlRequest = onUrlRequest,
+        onUrlChange = onUrlChange
  }

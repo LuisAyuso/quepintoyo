@@ -33,8 +33,6 @@ import Json.Decode as Deco exposing (..)
 
 import Tools exposing(..)
 
-init: Model
-init = Model []
 
 type alias Entry = 
     { title: String
@@ -45,4 +43,16 @@ type alias Entry =
 type alias Model = 
     { entries: List Entry
     }
+
+type Msg = NoOp
+
+init: String -> (Model, Cmd Msg)
+init flags = (Model [], Cmd.none)
+
+update: Msg -> Model -> (Model, Cmd Msg)
+update msg model = 
+    (model, Cmd.none)
+
+view: Model -> Html Msg
+view m = text "this is the feed"
 

@@ -141,7 +141,7 @@ fn static_files(file: PathBuf) -> Option<NamedFile> {
 
 // =========================================================
 
-fn compile(elmpath: &Path, jspath: &Path) -> Result<String, Status> {
+fn compile(elmpath: &Path, jspath: &Path) -> Result<(), Status> {
     // compile
     let inarg = format!("{}", elmpath.to_str().ok_or(Status::NotAcceptable)?);
     let outarg = format!("--output={}", jspath.to_str().ok_or(Status::NotAcceptable)?);
@@ -157,7 +157,7 @@ fn compile(elmpath: &Path, jspath: &Path) -> Result<String, Status> {
         return Err(Status::InternalServerError);
     }
 
-    Ok("great".to_string())
+    Ok(())
 }
 
 #[get("/scripts/<scriptfile>")]
@@ -192,7 +192,7 @@ fn script(scriptfile: &RawStr) -> Result<NamedFile, Status> {
 
 #[get("/check_token")]
 fn check_token(token: Token) -> Result<String, Status> {
-    Ok("".to_string())
+    Ok(token.to_string())
 }
 
 // =========================================================

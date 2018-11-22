@@ -29,7 +29,9 @@ impl std::convert::From<crate::error::Db> for rocket::http::Status {
 #[derive(Debug)]
 pub enum Crypto {
     TimeError,
-    Signature
+    Signature,
+    InvalidToken,
+    InvalidUserName,
 }
 
 impl std::convert::From<crate::error::Crypto> for rocket::http::Status {
