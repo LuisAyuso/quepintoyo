@@ -1,6 +1,7 @@
-module Tools exposing (inExclusiveRange, get, set, json2str)
+module Tools exposing (inExclusiveRange, get, set, json2str, enumerate)
 
 import Json.Encode as Enco exposing (..) 
+import List.Extra as LE exposing (..)
 
 inExclusiveRange: number -> (number, number) -> Bool
 inExclusiveRange n (min, max) =
@@ -32,3 +33,12 @@ set n (f, s, t) val=
 
 json2str: Enco.Value -> String
 json2str value = Enco.encode 2 value
+
+
+enumerate: List a -> List (Int, a)
+enumerate input =
+    let 
+        len = List.length input
+        range = List.range 0 (len-1)
+    in
+        input |> LE.zip range 

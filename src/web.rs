@@ -20,7 +20,6 @@ use crate::appstate::Token;
 
 // =========================================================
 
-
 // =========================================================
 
 // const ELM :&'static str =  "C:\\Users\\Luis\\AppData\\Roaming\\npm\\elm.cmd";
@@ -197,12 +196,86 @@ fn check_token(token: Token) -> Result<String, Status> {
 
 // =========================================================
 
+#[put("/jobs")]
+fn put_jobs(token: Token) -> Result<String, Status> {
+    Ok(token.to_string())
+}
+
+#[get("/jobs")]
+fn get_jobs(token: Token, state: State<App>) -> Result<String, Status> {
+
+    let query = doc! {
+        "username": token.get_user_name()?
+    };
+    let cursor = state.db.find("users", query)?;
+
+    use crate::appstate::Job;
+
+    let docs: Vec<Job> = cursor
+        .filter(|elem| elem.is_ok())
+        .map(|elem| {
+            let e = elem.unwrap();
+            Job::from_bson(e).unwrap()
+        })
+        .collect();
+
+    Ok("".to_string())
+}
+
+// =========================================================
+
+#[put("/news")]
+fn put_news(token: Token) -> Result<String, Status> {
+    Ok(token.to_string())
+}
+
+#[get("/news")]
+fn get_news(token: Option<Token>, state: State<App>) -> Result<String, Status> {
+
+//    let query = doc! {
+//        "username": token.get_user_name()?
+//    };
+//    let cursor = state.db.find("users", query)?;
+//
+//    use crate::appstate::Job;
+//
+//    let docs: Vec<Job> = cursor
+//        .filter(|elem| elem.is_ok())
+//        .map(|elem| {
+//            let e = elem.unwrap();
+//            Job::from_bson(e).unwrap()
+//        })
+//        .collect();
+
+    Ok("".to_string())
+}
+
+#[get("/news/<id>")]
+fn get_news_single(id: &RawStr, token: Option<Token>, state: State<App>) -> Result<String, Status> {
+    Ok("".to_string())
+}
+
+// =========================================================
+
 pub fn kickstart(app: App) {
     rocket::ignite()
         .manage(app)
         .mount(
             "/",
-            routes![index, static_files, script, upload, login, register, check_token]
+            routes![
+                index,
+                static_files,
+                script,
+                upload,
+                login,
+                register,
+                check_token,
+                get_jobs,
+                put_jobs,
+                get_news,
+                put_news,
+                get_news_single,
+            ],
         )
         .launch();
 }

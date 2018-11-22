@@ -44,7 +44,7 @@ impl std::convert::From<crate::error::Crypto> for rocket::http::Status {
 #[derive(Debug)]
 pub enum RequestError {
     NotAValidToken,
-    NoToken
+    NoToken,
 }
 
 impl std::convert::From<crate::error::RequestError> for rocket::http::Status {

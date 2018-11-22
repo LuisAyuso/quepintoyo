@@ -614,6 +614,7 @@ viewNewModal model =
             Create job -> modalDialog "Nuevo Trabajo" job
             Edit job   -> modalDialog "Editar Trabajo" job
 
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.none
@@ -636,8 +637,8 @@ subscriptions model =
 view: Model -> Html Msg
 view model = 
     div [] 
-        [ viewGrid model
-        , viewNewButton model 
+        [ viewNewButton model 
+        , viewGrid model
         , viewNewModal model 
         ]
 

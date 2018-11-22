@@ -57,8 +57,6 @@ type alias Model =
 type Msg 
     = NoOp 
     | Load String
-    | SaveAll
-    | DelAll
 
     -- messages of views
     | JobsMsg Jobs.Msg
@@ -184,11 +182,6 @@ update msg model =
         NoOp -> (model, Cmd.none )
 
         Load data -> loadData model data
-        SaveAll -> (model
-                   , upCmdKanban model (\jm -> saveJobs jm) 
-                   )
-
-        DelAll ->  (model, Cmd.batch [ sendDelAll appKey ]) 
 
         JobsMsg jobsmsg ->
             case model.view of
@@ -324,14 +317,14 @@ view model =
             Kanban jbs ->
                 div []
                 [ Html.map  (\msg -> JobsMsg msg)  (Jobs.view jbs)
-                , Button.button [ Button.secondary
-                                , Button.onClick SaveAll
-                                ] 
-                    [ text "Guardar"]
-                , Button.button [ Button.danger
-                                , Button.onClick DelAll
-                                ] 
-                    [ text "Borrar todo"]
+                -- , Button.button [ Button.secondary
+                --                 , Button.onClick SaveAll
+                --                 ] 
+                --     [ text "Guardar"]
+                -- , Button.button [ Button.danger
+                --                 , Button.onClick DelAll
+                --                 ] 
+                --     [ text "Borrar todo"]
                 ]
             Feed f -> Html.map   (\msg -> FeedMsg msg)   (Feed.view f)
             Settings -> text "settings"
