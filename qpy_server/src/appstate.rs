@@ -2,14 +2,9 @@ use serde_json;
 
 use mongodb::bson;
 
-use crypto::sha2::Sha256;
-use std::default::Default;
 
-use crate::db;
-use crate::error;
-
-#[macro_use]
-use qpy_core::conversion::*;
+//use qpy_core::conversion::*;
+use qpy_core::db;
 
 // =========================================================
 

@@ -3,12 +3,11 @@
 #[macro_use]
 extern crate rocket;
 
-#[macro_use(bson, doc)]
+#[macro_use]
 extern crate mongodb;
 
 #[macro_use]
 extern crate serde_derive;
-#[macro_use]
 extern crate serde_json;
 
 extern crate hex;
@@ -22,7 +21,6 @@ extern crate rustc_serialize;
 extern crate qpy_core;
 
 mod appstate;
-mod db;
 mod error;
 mod web;
 mod login;
@@ -34,9 +32,9 @@ fn main() {
     //    let db_host = "localhost";
     //    let db_port = 27017;
 
-    db::hello(db_host, db_port);
+    qpy_core::db::hello(db_host, db_port);
 
-    let connection = db::Connection::new(db_host, db_port).expect("could not connect to mongo");
+    let connection = qpy_core::db::Connection::new(db_host, db_port).expect("could not connect to mongo");
     let app = appstate::AppState::new(connection);
     web::kickstart(app);
 }

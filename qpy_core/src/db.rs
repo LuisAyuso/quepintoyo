@@ -6,7 +6,7 @@ const APPDB: &'static str = "testDB";
 #[cfg(not(test))]
 const APPDB: &'static str = "myApp";
 
-use qpy_core::error::Db as DbError;
+use crate::error::Db as DbError;
 
 pub struct Connection {
     client: Client,
