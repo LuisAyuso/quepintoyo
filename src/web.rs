@@ -16,9 +16,7 @@ use mongodb::bson;
 use serde_json;
 
 use crate::appstate::AppState as App;
-use crate::appstate::Token;
-
-// =========================================================
+use crate::login::token::Token;
 
 // =========================================================
 
@@ -79,12 +77,6 @@ fn login(data: Form<Login>, state: State<App>) -> Result<String, Status> {
     let entry = Login::from_bson(entry)?;
 
     let tok = Token::new(data.user.as_str())?;
-    state
-        .tokens
-        .write()
-        .map_err(|_| Status::InternalServerError)?
-        .entry(tok.clone())
-        .or_insert(entry);
     Ok(tok.to_string())
 }
 
@@ -115,12 +107,6 @@ fn register(data: Form<Login>, state: State<App>) -> Result<String, Status> {
                 return match state.db.add_doc("users", doc) {
                     Ok(_) => {
                         let tok = Token::new(data.user.clone().as_str())?;
-                        state
-                            .tokens
-                            .write()
-                            .map_err(|_| Status::InternalServerError)?
-                            .entry(tok.clone())
-                            .or_insert(data);
                         Ok(tok.to_string())
                     }
                     Err(_) => Err(Status::InternalServerError),
@@ -222,6 +208,11 @@ fn get_jobs(token: Token, state: State<App>) -> Result<String, Status> {
     Ok("".to_string())
 }
 
+#[get("/jobs/<id>")]
+fn get_jobs_single(id: &RawStr, token: Token, state: State<App>) -> Result<String, Status> {
+    Ok("".to_string())
+}
+
 // =========================================================
 
 #[put("/news")]
@@ -271,10 +262,11 @@ pub fn kickstart(app: App) {
                 register,
                 check_token,
                 get_jobs,
+                get_jobs_single,
                 put_jobs,
                 get_news,
-                put_news,
                 get_news_single,
+                put_news,
             ],
         )
         .launch();

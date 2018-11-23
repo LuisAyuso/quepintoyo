@@ -25,6 +25,7 @@ mod appstate;
 mod db;
 mod error;
 mod web;
+mod login;
 
 fn main() {
     let db_host = "192.168.0.2";
