@@ -35,16 +35,15 @@ import Tools exposing(..)
 import Url exposing(..)
 
 
-type alias Entry = 
+type alias NewsEntry = 
     { title: String
     , content: String
-    , photos: Maybe Url
-    , link: Maybe (List Url)
+    , photos: Maybe (List Url)
+    , link: Maybe Url
     }
 
-
 type alias Model = 
-    { entries: List Entry
+    { entries: List NewsEntry
     }
 
 type Msg = NoOp
@@ -53,8 +52,8 @@ type Msg = NoOp
 -- ============================================================
 
 init: String -> (Model, Cmd Msg)
-init flags = (Model [ Entry "one" "two" Nothing Nothing
-                    , Entry "two" "fasgfasfqa" Nothing Nothing
+init flags = (Model [ NewsEntry "one" "two" Nothing Nothing
+                    , NewsEntry "two" "fasgfasfqa" Nothing Nothing
                     ]
             , Cmd.none
             )
@@ -69,8 +68,8 @@ getColumn col cols list =
          |> List.filter (\(i,e) -> (modBy 4 i) == col)
          |> List.map (\(_,e) -> e)
 
-viewEntry: Entry -> Html Msg
-viewEntry entry = 
+viewNewsEntry: NewsEntry -> Html Msg
+viewNewsEntry entry = 
             Card.config [ Card.outlinePrimary ]
                 |> Card.headerH4 [] [ text entry.title ]
                 |> Card.block []
@@ -88,19 +87,19 @@ view model =
     [ Grid.row []
         [ model.entries 
                 |> getColumn 0 4
-                |> List.map viewEntry
+                |> List.map viewNewsEntry
                 |> Grid.col []
         , model.entries 
                 |> getColumn 1 4
-                |> List.map viewEntry
+                |> List.map viewNewsEntry
                 |> Grid.col []
         , model.entries 
                 |> getColumn 2 4
-                |> List.map viewEntry
+                |> List.map viewNewsEntry
                 |> Grid.col []
         , model.entries 
                 |> getColumn 3 4
-                |> List.map viewEntry
+                |> List.map viewNewsEntry
                 |> Grid.col []
         ]
     ]

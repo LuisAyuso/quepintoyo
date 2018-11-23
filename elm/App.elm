@@ -14,7 +14,7 @@ import Json.Encode as Enco exposing (..)
 import Bootstrap.Button as Button
 import Bootstrap.Modal as Modal
 import Bootstrap.Navbar as Navbar
-
+import Bootstrap.Alert as Alert
 
 import Jobs exposing (..)
 import Login exposing (..)
@@ -52,6 +52,7 @@ type alias Model =
     , navbarState : Navbar.State 
     , login: Login.Model  
     , error: Maybe String
+    , alert: Alert.Visibility
     }
 
 type Msg 
@@ -69,6 +70,9 @@ type Msg
 
     -- Navigation
     | ChangeView Route.Route
+
+    -- Alert
+    | AlertMsg Alert.Visibility
 
 -- ===============================================
 -- ===============================================
@@ -92,7 +96,7 @@ init _ =
         (navbar, cmds) = Navbar.initialState NavbarMsg
         modal = Modal.shown -- Modal.hidden
     in 
-        (Model Nothing Nothing default_view modal navbar lm Nothing
+        (Model Nothing Nothing default_view modal navbar lm Nothing Alert.shown
         , Cmd.batch [ cmds, view_cmds,  sendLoad sessionKey, sendLoad appKey ])
 
 -- ===============================================
@@ -249,6 +253,9 @@ update msg model =
                         Settings -> doNothing
                         _ ->  ({model | view = Settings}, Cmd.none)
 
+        AlertMsg visibility ->
+            ({ model | alert = visibility }, Cmd.none)
+
 -- ===============================================
 
 subscriptions : Model -> Sub Msg
@@ -285,6 +292,16 @@ activeConfig model =
         Settings -> Navbar.itemLinkActive
         _ -> Navbar.itemLink
 
+viewAlert model =
+         Alert.config
+        |> Alert.info
+        |> Alert.dismissable AlertMsg
+        |> Alert.children
+            [  -- Alert.h4 [] [ text "Atencion:" ]
+             p [] [text "Nos obligan a informarte de la obviedad de que este sitio utiliza cookies!"]
+            ]
+        |> Alert.view model.alert
+
 view: Model -> Html Msg
 view model =
     div[]
@@ -312,6 +329,7 @@ view model =
                     ]
             ]
         |> Navbar.view model.navbarState
+    , viewAlert model
     ,
         case model.view of
             Kanban jbs ->
