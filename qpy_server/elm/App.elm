@@ -194,7 +194,12 @@ update msg model =
                     in ({model | view = Kanban newmod}, cmds)
                 _ -> (model, Cmd.none)
 
-        FeedMsg feedmsg -> (model, Cmd.none)
+        FeedMsg feedmsg -> 
+            case model.view of
+                Feed md -> 
+                    let (newmod, cmds) = Feed.update feedmsg md 
+                    in ({model | view = Feed newmod}, Cmd.map FeedMsg cmds)
+                _ -> (model, Cmd.none)
 
         LoginMsg loginmsg -> 
                 let (nm, cmds) = Login.update loginmsg model.login

@@ -3,6 +3,7 @@ module Feed exposing (Model, Msg(..), update, init, view)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
+import Http exposing (..)
 import Browser.Navigation as Navigation
 import Browser exposing (UrlRequest)
 
@@ -38,29 +39,62 @@ import Url exposing(..)
 type alias NewsEntry = 
     { title: String
     , content: String
-    , photos: Maybe (List Url)
-    , link: Maybe Url
+    , photos: Maybe (List String)
+    , link: Maybe String --Url
     }
+
+decodeNewsEntry: Deco.Decoder NewsEntry
+decodeNewsEntry =
+    Deco.map4 NewsEntry
+        (Deco.field "title" Deco.string)
+        (Deco.field "content" Deco.string)
+        (Deco.maybe (Deco.field "photos" (Deco.list Deco.string)))
+        (Deco.maybe (Deco.field "link" Deco.string))
+
+decodeNews: Deco.Decoder (List NewsEntry)
+decodeNews = 
+    Deco.list decodeNewsEntry
 
 type alias Model = 
     { entries: List NewsEntry
+    , errStr: String
     }
 
 type Msg = NoOp
+    | NewsResponse (Result Http.Error String)
+    | GotStr String
+
+-- ============================================================
+
+newsRequest: Http.Request String 
+newsRequest =  
+    Http.getString "news"
 
 -- ============================================================
 -- ============================================================
 
 init: String -> (Model, Cmd Msg)
-init flags = (Model [ NewsEntry "one" "two" Nothing Nothing
-                    , NewsEntry "two" "fasgfasfqa" Nothing Nothing
-                    ]
-            , Cmd.none
+init flags = (Model  [] "no error"
+
+                    -- [ NewsEntry "one" "two" Nothing Nothing
+                    -- , NewsEntry "two" "fasgfasfqa" Nothing Nothing
+                    -- ] "no error"
+            , Cmd.batch [ 
+                    Http.send NewsResponse newsRequest
+               ] 
             )
 
 update: Msg -> Model -> (Model, Cmd Msg)
-update msg model = 
-    (model, Cmd.none)
+update msg model =
+    case msg of
+        NewsResponse res -> 
+            case res of
+                Ok json -> 
+                    case Deco.decodeString decodeNews json of
+                        Ok news -> ({model | entries = news }, Cmd.none)
+                        Err _ -> ({model | errStr = "parse error"}, Cmd.none)
+                Err error -> ({model | errStr = "recv error"}, Cmd.none)
+        _ -> ({model | errStr = "caca"}, Cmd.none)
 
 getColumn: Int -> Int -> List a -> List a
 getColumn col cols list = 
@@ -73,33 +107,44 @@ viewNewsEntry entry =
             Card.config [ Card.outlinePrimary ]
                 |> Card.headerH4 [] [ text entry.title ]
                 |> Card.block []
-                    [ Block.text [] [ text entry.content ]
-                    , Block.custom <| 
-                        div [][
-                            -- img [src  "Loading_icon.gif" ][]
+                    [ 
+                        -- Block.text [] [ text entry.content ]
+                     Block.custom <| 
+                        a [ Maybe.withDefault "" entry.link |> href
+                          , target "_blank"
+                          , rel  "noopener noreferrer" ][
+                            case entry.photos of
+                                Nothing -> text "no hay fotos"
+                                Just (img_url::_)  -> img [src  img_url
+                                 , object-fit  "contain"
+                                                          , width 210 ][]
+                                Just (_)  -> text "no hay fotos"
                         ]
                     ]
                 |> Card.view
 
 view: Model -> Html Msg
 view model = 
-  Grid.container [] 
-    [ Grid.row []
-        [ model.entries 
-                |> getColumn 0 4
-                |> List.map viewNewsEntry
-                |> Grid.col []
-        , model.entries 
-                |> getColumn 1 4
-                |> List.map viewNewsEntry
-                |> Grid.col []
-        , model.entries 
-                |> getColumn 2 4
-                |> List.map viewNewsEntry
-                |> Grid.col []
-        , model.entries 
-                |> getColumn 3 4
-                |> List.map viewNewsEntry
-                |> Grid.col []
+    div []
+    [ Grid.container [] 
+        [ Grid.row []
+            [ model.entries 
+                    |> getColumn 0 4
+                    |> List.map viewNewsEntry
+                    |> Grid.col [Col.xs3]
+            , model.entries 
+                    |> getColumn 1 4
+                    |> List.map viewNewsEntry
+                    |> Grid.col [Col.xs3]
+            , model.entries 
+                    |> getColumn 2 4
+                    |> List.map viewNewsEntry
+                    |> Grid.col [Col.xs3]
+            , model.entries 
+                    |> getColumn 3 4
+                    |> List.map viewNewsEntry
+                    |> Grid.col [Col.xs3]
+            ]
         ]
+    , text model.errStr
     ]

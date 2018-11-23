@@ -15,6 +15,7 @@ use mongodb::bson;
 use serde_json;
 
 use qpy_core::conversion::*;
+use qpy_core::Job;
 
 use crate::appstate::AppState as App;
 use crate::login::token::Token;
@@ -196,7 +197,6 @@ fn get_jobs(token: Token, state: State<App>) -> Result<String, Status> {
     };
     let cursor = state.db.find("users", query)?;
 
-    use crate::appstate::Job;
 
     let docs: Vec<Job> = cursor
         .filter(|elem| elem.is_ok())
@@ -224,22 +224,23 @@ fn put_news(token: Token) -> Result<String, Status> {
 #[get("/news")]
 fn get_news(token: Option<Token>, state: State<App>) -> Result<String, Status> {
 
-//    let query = doc! {
-//        "username": token.get_user_name()?
-//    };
-//    let cursor = state.db.find("users", query)?;
-//
-//    use crate::appstate::Job;
-//
-//    let docs: Vec<Job> = cursor
-//        .filter(|elem| elem.is_ok())
-//        .map(|elem| {
-//            let e = elem.unwrap();
-//            Job::from_bson(e).unwrap()
-//        })
-//        .collect();
+//db.getCollection('news').find({})
 
-    Ok("".to_string())
+    let query = doc! {
+    };
+    let cursor = state.db.find("news", query)?;
+
+    use qpy_core::NewsEntry;
+
+    let docs: Vec<NewsEntry> = cursor
+        .filter(|elem| elem.is_ok())
+        .map(|elem| {
+            let e = elem.unwrap();
+            NewsEntry::from_bson(e).unwrap()
+        })
+        .collect();
+
+    Ok(docs.to_json()?)
 }
 
 #[get("/news/<id>")]
