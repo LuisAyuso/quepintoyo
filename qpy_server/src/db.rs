@@ -1,12 +1,12 @@
 use mongodb::db::ThreadedDatabase;
-use mongodb::{Client, ThreadedClient};
+use mongodb::{Client, ThreadedClient, bson};
 
 #[cfg(test)]
 const APPDB: &'static str = "testDB";
 #[cfg(not(test))]
 const APPDB: &'static str = "myApp";
 
-use crate::error::Db as DbError;
+use qpy_core::error::Db as DbError;
 
 pub struct Connection {
     client: Client,

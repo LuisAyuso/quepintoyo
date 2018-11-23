@@ -7,7 +7,9 @@ use std::default::Default;
 
 use crate::db;
 use crate::error;
-use crate::conversion::*;
+
+#[macro_use]
+use qpy_core::conversion::*;
 
 // =========================================================
 

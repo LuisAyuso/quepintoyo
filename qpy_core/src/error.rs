@@ -11,6 +11,7 @@ impl std::convert::From<crate::error::Conversion> for rocket::http::Status {
     }
 }
 
+
 #[derive(Debug)]
 pub enum Db {
     ConnectionError,
@@ -19,23 +20,8 @@ pub enum Db {
     NotFound,
 }
 
-impl std::convert::From<crate::error::Db> for rocket::http::Status {
-    fn from(error: crate::error::Db) -> rocket::http::Status {
-        println!("error: {:?}", error);
-        rocket::http::Status::InternalServerError
-    }
-}
-
-#[derive(Debug)]
-pub enum Crypto {
-    TimeError,
-    Signature,
-    InvalidToken,
-    InvalidUserName,
-}
-
-impl std::convert::From<crate::error::Crypto> for rocket::http::Status {
-    fn from(error: crate::error::Crypto) -> rocket::http::Status {
+impl std::convert::From<Db> for rocket::http::Status {
+    fn from(error: Db) -> rocket::http::Status {
         println!("error: {:?}", error);
         rocket::http::Status::InternalServerError
     }

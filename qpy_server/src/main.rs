@@ -18,8 +18,8 @@ extern crate crypto;
 extern crate jwt;
 extern crate rustc_serialize;
 
-#[macro_use]
-mod conversion;
+#[macro_use(serialize_tools)]
+extern crate qpy_core;
 
 mod appstate;
 mod db;

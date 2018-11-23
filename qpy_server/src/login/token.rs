@@ -5,9 +5,10 @@ use mongodb::bson;
 use crypto::sha2::Sha256;
 use std::default::Default;
 
+use qpy_core::conversion::*;
+
 use crate::db;
 use crate::error;
-use crate::conversion::*;
 
 
 // =========================================================
