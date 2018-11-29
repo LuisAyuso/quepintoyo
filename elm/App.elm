@@ -77,9 +77,9 @@ type Msg
 -- ===============================================
 -- ===============================================
 
-initKanban: (Jobs.Model, Cmd Jobs.Msg)
-initKanban =
-        Jobs.init ""
+initKanban: Ctx.Context -> (Jobs.Model, Cmd Jobs.Msg)
+initKanban ctx =
+        Jobs.initApp ctx ""
 
 initFeed: Ctx.Context -> (Feed.Model, Cmd Feed.Msg)
 initFeed ctx = Feed.initApp ctx ""
@@ -191,8 +191,8 @@ update msg model =
         JobsMsg jobsmsg ->
             case model.view of
                 Kanban md -> 
-                    let (newmod, cmds) = Jobs.update jobsmsg md 
-                    in ({model | view = Kanban newmod}, cmds)
+                    let (newmod, cmds) = Jobs.updateApp model.context jobsmsg md 
+                    in ({model | view = Kanban newmod}, Cmd.map JobsMsg cmds)
                 _ -> (model, Cmd.none)
 
         FeedMsg feedmsg -> 
@@ -239,7 +239,7 @@ update msg model =
         ChangeView r -> 
             let 
                 doNothing = (model, Cmd.none)
-                (jbs, jobscmds) = initKanban
+                (jbs, jobscmds) = initKanban model.context
                 (feed, feedcmds) = initFeed model.context
             in case r of
                 Route.Home -> doNothing

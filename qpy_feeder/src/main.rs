@@ -48,8 +48,8 @@ fn main() {
     let conn = qpy_core::db::Connection::new(db_host, db_port).expect("must connect");
 
 
-    //let feed = reqwest::get(ATOM).unwrap().text().unwrap();
-    let feed = reqwest::get(RSS).unwrap().text().unwrap();
+    let feed = reqwest::get(ATOM).unwrap().text().unwrap();
+    //let feed = reqwest::get(RSS).unwrap().text().unwrap();
 
      // println!("{}", feed);
 

@@ -81,7 +81,6 @@ initApp ctx flags = (Model  [] "no error"
                ] 
             )
 
-
 init: String -> (Model, Cmd Msg)
 init flags = 
     initApp Ctx.initCtx flags
@@ -151,5 +150,5 @@ view model =
                     |> Grid.col [Col.xs3]
             ]
         ]
-    , text model.errStr
+    -- , text model.errStr
     ]

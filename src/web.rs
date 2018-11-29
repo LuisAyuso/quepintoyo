@@ -3,6 +3,8 @@ use rocket::http::RawStr;
 use rocket::http::Status;
 use rocket::request::Form;
 use rocket::response::NamedFile;
+use rocket_contrib::json::Json;
+
 use rocket::State;
 
 use std::process::Command;
@@ -189,6 +191,11 @@ fn put_jobs(token: Token) -> Result<String, Status> {
     Ok(token.to_string())
 }
 
+#[put("/jobs/single", data="<input>")]
+fn put_job(token: Token, input: Json<Job>) -> Result<String, Status> {
+    Ok(token.to_string())
+}
+
 #[get("/jobs")]
 fn get_jobs(token: Token, state: State<App>) -> Result<String, Status> {
 
@@ -196,7 +203,6 @@ fn get_jobs(token: Token, state: State<App>) -> Result<String, Status> {
         "username": token.get_user_name()?
     };
     let cursor = state.db.find("users", query)?;
-
 
     let docs: Vec<Job> = cursor
         .filter(|elem| elem.is_ok())
@@ -223,8 +229,6 @@ fn put_news(token: Token) -> Result<String, Status> {
 
 #[get("/news")]
 fn get_news(token: Option<Token>, state: State<App>) -> Result<String, Status> {
-
-//db.getCollection('news').find({})
 
     let query = doc! {
     };
@@ -266,6 +270,7 @@ pub fn kickstart(app: App) {
                 get_jobs,
                 get_jobs_single,
                 put_jobs,
+                put_job,
                 get_news,
                 get_news_single,
                 put_news,

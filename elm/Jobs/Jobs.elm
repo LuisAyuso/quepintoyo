@@ -1,4 +1,4 @@
-module Jobs.Jobs exposing (Model, Msg(..), viewJobs, viewGrid, viewNewButton, viewNewModal, view, update, init, encode, decode)
+module Jobs.Jobs exposing (Model, Msg(..), viewJobs, viewGrid, viewNewButton, viewNewModal, view, updateApp, initApp, encode, decode)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -31,12 +31,23 @@ import Bootstrap.Text as Text
 import Json.Encode as Enco exposing (..) 
 import Json.Decode as Deco exposing (..) 
 
+import Http exposing(..) 
+
 import Tools exposing(..)
+import Ctx.Ctx as Ctx exposing(..)
+
+initApp: Ctx.Context -> String -> (Model, Cmd Msg)
+initApp ctx flags = 
+            (Model Modal.hidden None 0 initSort [] 
+            , Cmd.batch [ 
+                    Ctx.createGetRequest ctx "jobs" |>
+                    Http.send GetJobsResponse 
+               ] 
+            )
+
 
 init: String -> (Model, Cmd Msg)
-init flags = (Model Modal.hidden None 0 initSort [], Cmd.none)
-     -- [ Job 1 "massive darkness" initTasks Simple Nothing
-     -- , Job 2 "star trek" initTasks Simple Nothing ]
+init flags = initApp Ctx.initCtx flags
 
 type alias Task = 
     { done: Bool
@@ -174,10 +185,14 @@ type Msg = Noop
 
         -- sortBy 
         | SortBy Int OrderBy
+    
+        -- persistence answers
+        | NewJobResponse (Result Http.Error String)
+        | GetJobsResponse (Result Http.Error String)
 
 
-update: Msg -> Model -> (Model, Cmd msg)
-update msg model =
+updateApp: Ctx.Context -> Msg -> Model -> (Model, Cmd Msg)
+updateApp ctx msg model =
     case msg of    
 
         Noop -> (model, Cmd.none)
@@ -220,22 +235,30 @@ update msg model =
             , Cmd.none)
 
         DoneCreating -> 
-            (case model.creating of
-                None -> model
-                Create newjob ->
-                    { model | 
-                        create = Modal.hidden,
-                        creating = None,
-                        nextId = model.nextId + 1,
-                        jobs = model.jobs ++ [ newjob ]
-                    }
-                Edit newjob -> 
-                    { model |
-                        create = Modal.hidden,
-                        creating = None,
-                        jobs = setJob newjob model.jobs
-                    }
-            , Cmd.none)
+            let
+                request = (\job -> job |> encodeJob |>
+                                Ctx.createJsonPutRequest ctx "jobs/single" |>
+                                Http.send GetJobsResponse)
+            in
+                case model.creating of
+
+                    None -> (model, Cmd.none)
+                    Create newjob ->
+                        ({ model | 
+                            create = Modal.hidden,
+                            creating = None,
+                            nextId = model.nextId + 1,
+                            jobs = model.jobs ++ [ newjob ]
+                        }
+                        , Cmd.batch [ request newjob ])
+                    Edit newjob -> 
+                        ({ model |
+                            create = Modal.hidden,
+                            creating = None,
+                            jobs = setJob newjob model.jobs
+                        }
+                        , Cmd.none)
+
 
         CancelCreating -> ({ model | create = Modal.hidden } , Cmd.none)
 
@@ -289,9 +312,15 @@ update msg model =
             ({ model | sort =  by |> Tools.set col model.sort }
             , Cmd.none)
 
+        NewJobResponse res -> (model, Cmd.none)
+        GetJobsResponse res -> (model, Cmd.none)
+
+update: Msg -> Model -> (Model, Cmd Msg)
+update msg model = updateApp Ctx.initCtx msg model
 
 -- =================================================================
 -- serialize routines
+
 
 encodeTask: Task -> Enco.Value
 encodeTask task = Enco.object 
@@ -530,25 +559,25 @@ viewGrid model =
   Grid.container [] 
     [ Grid.row []
         [ Grid.col [ Col.textAlign Text.alignXsCenter ] 
-            [ viewTitle "Por empezar" 0 (get 0 model.sort)
+            [ viewTitle "Por empezar" 0 (Tools.get 0 model.sort)
             , model.jobs 
                 |> List.filter (\job -> (computeCompletness job.tasks == 0.0))
-                |> sortBy  (get 0 model.sort)
+                |> sortBy  (Tools.get 0 model.sort)
                 |> viewJobs
             ]
         , Grid.col [ Col.textAlign Text.alignXsCenter ] 
-            [ viewTitle "En progreso" 1 (get 1 model.sort)
+            [ viewTitle "En progreso" 1 (Tools.get 1 model.sort)
             , model.jobs 
                 |> List.filter (\job -> Tools.inExclusiveRange (computeCompletness job.tasks) (0,100))
-                |> sortBy (get 1 model.sort)
+                |> sortBy (Tools.get 1 model.sort)
                 |> viewJobs
 
             ]
         , Grid.col [ Col.textAlign Text.alignXsCenter ] 
-            [ viewTitle "Terminado" 2 (get 2 model.sort)
+            [ viewTitle "Terminado" 2 (Tools.get 2 model.sort)
             , model.jobs 
                 |> List.filter (\job -> (computeCompletness job.tasks == 100.0))
-                |> sortBy (get 2 model.sort)
+                |> sortBy (Tools.get 2 model.sort)
                 |> viewJobs
             ]
         ]
