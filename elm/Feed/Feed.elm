@@ -23,6 +23,7 @@ import Bootstrap.Form.Radio as Radio
 import Bootstrap.Form.Textarea as Textarea
 import Bootstrap.Form.Fieldset as Fieldset
 import Bootstrap.Form.InputGroup as InputGroup
+import Bootstrap.Utilities.Spacing as Spacing
 
 import Bootstrap.Button as Button
 import Bootstrap.Progress as Progress
@@ -109,7 +110,7 @@ getColumn col cols list =
 
 viewNewsEntry: NewsEntry -> Html Msg
 viewNewsEntry entry = 
-            Card.config [ Card.outlinePrimary ]
+            Card.config [ Card.outlinePrimary, Card.attrs [Spacing.mt2 ] ]
                 |> Card.headerH4 [] [ text entry.title ]
                 |> Card.block []
                     [ 

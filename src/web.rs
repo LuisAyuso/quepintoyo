@@ -187,22 +187,33 @@ fn check_token(token: Token) -> Result<String, Status> {
 // =========================================================
 
 #[put("/jobs")]
-fn put_jobs(token: Token) -> Result<String, Status> {
+fn put_jobs(token: Token, state: State<App>) -> Result<String, Status> {
     Ok(token.to_string())
 }
 
 #[put("/jobs/single", data="<input>")]
-fn put_job(token: Token, input: Json<Job>) -> Result<String, Status> {
-    Ok(token.to_string())
+fn put_job(token: Token, input: Json<Job>, state: State<App>) -> Result<String, Status> {
+ 
+    let user = token.get_user_name()?;
+    let job = input.into_inner();
+
+    let job_entry = bson::to_bson(&job).map_err(|_| Status::InternalServerError)?;
+    if let bson::Bson::Document(doc) = job_entry {
+        return match state.db.add_doc("jobs", doc) {
+            Ok(_) => Ok("ok".to_string()),
+            Err(_) => Err(Status::InternalServerError),
+        };
+    }
+
+    Err(Status::InternalServerError)
 }
 
 #[get("/jobs")]
 fn get_jobs(token: Token, state: State<App>) -> Result<String, Status> {
 
     let query = doc! {
-        "username": token.get_user_name()?
     };
-    let cursor = state.db.find("users", query)?;
+    let cursor = state.db.find("jobs", query)?;
 
     let docs: Vec<Job> = cursor
         .filter(|elem| elem.is_ok())
@@ -212,7 +223,7 @@ fn get_jobs(token: Token, state: State<App>) -> Result<String, Status> {
         })
         .collect();
 
-    Ok("".to_string())
+    Ok(docs.to_json()?)
 }
 
 #[get("/jobs/<id>")]

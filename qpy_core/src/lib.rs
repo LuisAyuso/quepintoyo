@@ -53,6 +53,7 @@ impl Job {
 }
 
 serialize_tools!(Job);
+serialize_tools!(Vec<Job>);
 
 // =========================================================
 

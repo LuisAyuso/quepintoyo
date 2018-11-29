@@ -30,6 +30,8 @@ import Json.Encode as Encode
 
 import Validate exposing (..)
 
+import Gen.UserData exposing(..)
+
 
 type alias Model =
     { callback: String

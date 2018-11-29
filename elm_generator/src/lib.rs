@@ -10,7 +10,17 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 use syn::visit::Visit;
 use itertools::Itertools;
-use std::collections::BTreeMap as Map;
+use std::env;
+use std::fs::{File, DirBuilder, remove_file};
+use std::path::Path;
+use std::io::prelude::*;
+
+
+trait GenCode{
+    fn to_elm(&self) -> String;
+    fn elm_encode(&self) -> String;
+    fn elm_decode(&self) -> String;
+}
 
 type Field = (String, ElmType);
 
@@ -19,27 +29,97 @@ struct ElmStruct{
     name: String,
     fields: Vec<Field>,
 }
+impl GenCode for ElmStruct{
+    fn to_elm(&self) -> String{
+        let fields = itertools::join (self.fields.iter().map(|(n,t)| format!("{}: {}", n, t.to_elm() )
+        ), ",\n    ");
+
+        format!("type alias {} = {{\n   {} \n   }} ", self.name, fields)
+    }
+
+    fn elm_encode(&self) -> String{
+
+        let fields = itertools::join (self.fields.iter().map(|(n,t)| format!(r#"("{}", E.{} val.{})"#, n, map_native_decode(t.to_elm().as_str()), n )
+        ), ",\n    ");
+
+        format!(r#"
+encode: {} -> E.Value
+encode val =
+    object
+    [ {} ]
+        "#, self.name, fields)
+    }
+
+    fn elm_decode(&self) -> String{
+
+        let n = self.fields.len();
+        let fields = itertools::join (self.fields.iter().map(|(n,t)| 
+            format!(r#"(D.field "{}" D.{})"#, n, map_native_decode(t.to_elm().as_str()) )
+        ), "\n    ");
+
+    format!(r#"
+decode : D.Decoder {}
+decode =
+  map{} {}
+    {}
+"#, self.name, n, self.name, fields)
+    }
+
+}
 
 #[derive(Debug)]
 enum ElmType{
-    None,
+    NotAType,
     Struct(ElmStruct),
     Custom(String),
     Native(&'static str),
 }
 
-
-#[derive(Default)]
-struct ConvertCtx{
-    type_alias: Map<String, ElmType>,
-}
-
-impl ConvertCtx{
-    fn new () -> ConvertCtx{
-        Default::default()
+impl ElmType{
+    fn to_string (&self) -> String{
+        match self{
+            ElmType::NotAType => panic!("not a type"),
+            ElmType::Struct(s) => s.name.clone(),
+            ElmType::Custom(s) => s.clone(),
+            ElmType::Native(s) => s.to_string(),
+        }
+    }
+    fn name(&self) -> String{
+        match self{
+            ElmType::NotAType => panic!("not a type"),
+            ElmType::Struct(s) => s.name.clone(),
+            ElmType::Custom(s) => s.clone(),
+            ElmType::Native(s) => s.to_string(),
+        }
     }
 }
 
+impl GenCode for ElmType{
+    fn to_elm(&self) -> String{
+        match self{
+            ElmType::NotAType => panic!("not a type"),
+            ElmType::Struct(s) => s.to_elm(),
+            ElmType::Custom(s) => s.to_string(),
+            ElmType::Native(s) => s.to_string(),
+        }
+    }
+    fn elm_encode(&self) -> String{
+        match self{
+            ElmType::NotAType => panic!("not a type"),
+            ElmType::Struct(s) => s.elm_encode(),
+            ElmType::Custom(s) => panic!("no way"),
+            ElmType::Native(s) => map_native_decode(s),
+        }
+    }
+    fn elm_decode(&self) -> String{
+        match self{
+            ElmType::NotAType => panic!("not a type"),
+            ElmType::Struct(s) => s.elm_decode(),
+            ElmType::Custom(s) => panic!("no way"),
+            ElmType::Native(s) => map_native_decode(s),
+        }
+    }
+}
 
 struct TypeConverter{
     ty: ElmType,
@@ -48,7 +128,7 @@ struct TypeConverter{
 impl TypeConverter{
     fn new() -> TypeConverter{
         TypeConverter{
-            ty : ElmType::None,
+            ty : ElmType::NotAType,
         }
     }
 
@@ -74,7 +154,6 @@ fn to_string<'ast>(path: &'ast syn::Path) -> String{
 
 fn map_native<'ast>(ty: &str) -> ElmType{
 
-    println!("map {}", ty);
     match ty{
         "String" => ElmType::Native("String"),
         "str" => ElmType::Native("String"),
@@ -92,10 +171,20 @@ fn map_native<'ast>(ty: &str) -> ElmType{
         "f32" =>  ElmType::Native("Float"),
         "f64" => ElmType::Native("Float"),
 
-        _ => panic!("not implemtned"),
+        _ => panic!("not implemented"),
     }
 }
 
+fn map_native_decode<'ast>(ty: &str) -> String{
+
+    match ty{
+        "String" => "string".to_string(),
+        "Int" =>  "int".to_string(),
+        "Float" => "float".to_string(),
+
+        _ => panic!("not implemented"),
+    }
+}
 
 impl<'ast> syn::visit::Visit<'ast> for TypeConverter{
 
@@ -114,7 +203,7 @@ impl<'ast> syn::visit::Visit<'ast> for TypeConverter{
     }
 
     fn visit_data_struct(&mut self, ds: &'ast syn::DataStruct){
-        println!("data struct: {:?}", ds);
+        //println!("data struct: {:?}", ds);
 
         let mut fc : FieldConverter = Default::default();
         for field in ds.fields.iter(){
@@ -132,11 +221,11 @@ impl<'ast> syn::visit::Visit<'ast> for TypeConverter{
         self.ty = map_native(ty.as_str());
     }
 
-    fn visit_path_arguments(&mut self, i: &'ast syn::PathArguments){
+    fn visit_path_arguments(&mut self, _i: &'ast syn::PathArguments){
 
     }
 
-    fn visit_path_segment(&mut self, i: &'ast syn::PathSegment){
+    fn visit_path_segment(&mut self, _i: &'ast syn::PathSegment){
 
     }
 
@@ -171,12 +260,11 @@ pub fn derive_elm(input: TokenStream) -> TokenStream {
     let expanded = quote! {
     };
 
-    println!("one elm struct found");
 
     TokenStream::from(expanded)
 }
 
-fn parse_types(di: syn::DeriveInput) -> ElmType{
+fn parse_type(di: syn::DeriveInput) -> ElmType{
     let mut tc = TypeConverter::new();
     tc.visit_derive_input(&di);
     tc.ty
@@ -184,8 +272,45 @@ fn parse_types(di: syn::DeriveInput) -> ElmType{
 
 fn generate_elm_code(di: syn::DeriveInput){
 
-    parse_types(di);
+    let key = "CARGO_MANIFEST_DIR";
+    let p = env::var(key).expect("the variable must exist");
+
+    let ty = parse_type(di);
+    let folder = format!("{}/elm/Gen/",p);
+    let file = format!("{}/elm/Gen/{}.elm",p, ty.name());
+
+    let folder = Path::new(folder.as_str());
+    let file = Path::new(file.as_str());
+
+    if !folder.exists(){
+        DirBuilder::new().recursive(true).create(folder).expect("must go");
+    }
+    if file.exists(){
+        remove_file(file).expect("rewriting file failure");
+    }
+
+    println!("{}", p);
+    let mut file = File::create(file).expect("could not create file");
+    
+    let header = format!("module Gen.{} exposing ({}, encode, decode)", ty.name(), ty.name());
+    let import = 
+    r#"
+import Json.Decode as D exposing (..)
+import Json.Encode as E exposing (..)
+"#;
+
+    file.write_all(header.as_bytes());
+    file.write_all(b"\n");
+    file.write_all(import.as_bytes());
+    file.write_all(b"\n");
+    file.write_all(ty.to_elm().as_bytes());
+    file.write_all(b"\n");
+    file.write_all(ty.elm_encode().as_bytes());
+    file.write_all(b"\n");
+    file.write_all(ty.elm_decode().as_bytes());
+
 }
+
 
 
 #[cfg(test)]
@@ -194,7 +319,23 @@ mod tests {
     use super::*;
 
     #[test]
-    fn it_works() {
+    fn generate() {
+        let di: syn::DeriveInput = syn::parse_str(
+        r#"
+            #[derive(Elm)]
+            pub struct UserData {
+                pub string: String,
+                pub ref_str: &'static str,
+                pub int: u32,
+                pub float: f32,
+            }
+        "#).expect("must be valid code");
+
+        generate_elm_code(di);
+    }
+
+    #[test]
+    fn parse_n_print() {
 
         let di: syn::DeriveInput = syn::parse_str(
         r#"
@@ -206,9 +347,9 @@ mod tests {
                 pub float: f32,
             }
         "#).expect("must be valid code");
-        println!("{:?}", di);
+        //println!("{:?}", di);
 
-        let x = parse_types(di);
-        println!("{:?}", x);
+        let x = parse_type(di);
+        println!("{}", x.to_elm());
     }
 }

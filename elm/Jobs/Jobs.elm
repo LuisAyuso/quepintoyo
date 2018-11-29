@@ -27,6 +27,7 @@ import Bootstrap.Button as Button
 import Bootstrap.Progress as Progress
 import Bootstrap.Modal as Modal
 import Bootstrap.Text as Text
+import Bootstrap.Utilities.Spacing as Spacing
 
 import Json.Encode as Enco exposing (..) 
 import Json.Decode as Deco exposing (..) 
@@ -313,7 +314,13 @@ updateApp ctx msg model =
             , Cmd.none)
 
         NewJobResponse res -> (model, Cmd.none)
-        GetJobsResponse res -> (model, Cmd.none)
+        GetJobsResponse res -> 
+            case res of
+                Err _ -> (model, Cmd.none)
+                Ok jobs -> 
+                    case decode jobs of
+                        Nothing -> (model, Cmd.none)
+                        Just m -> (m, Cmd.none)
 
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model = updateApp Ctx.initCtx msg model
@@ -487,7 +494,9 @@ viewSimpleJob job =
 viewJob: Job -> Html Msg
 viewJob job =
     Card.config [ Card.outlineSecondary,
-                  Card.align Text.alignSmLeft ]
+                  Card.align Text.alignSmLeft,
+                  Card.attrs [Spacing.mt2 ] 
+                ]
        |> Card.headerH4 [] [ text job.name ]
        |> Card.block []
            [ Block.custom <| 
@@ -691,8 +700,7 @@ viewStandAlone model =
             ]
         ,div[]
             [ text "decoded:"
-            ,  
-                case decoded of
+            ,  case decoded of
                     Nothing -> text "caca"
                     Just val -> viewGrid val
             ]
