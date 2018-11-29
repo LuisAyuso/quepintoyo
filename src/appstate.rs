@@ -8,7 +8,7 @@ use qpy_core::db;
 
 // =========================================================
 
-#[derive(Serialize, Deserialize, FromForm, Debug, Clone)]
+#[derive(Serialize, Deserialize, FromForm, Debug, Clone, Elm)]
 pub struct UserData {
     pub user: String,
     pub password: String,

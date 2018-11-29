@@ -20,6 +20,9 @@ extern crate rustc_serialize;
 #[macro_use(serialize_tools)]
 extern crate qpy_core;
 
+#[macro_use]
+extern crate elm_generator;
+
 mod appstate;
 mod error;
 mod web;
