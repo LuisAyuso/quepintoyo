@@ -30,6 +30,23 @@ impl Connection {
             .map_err(|_| DbError::ConnectionError)
     }
 
+    pub fn replace_doc(
+        &self,
+        collection: &str,
+        query: bson::Document,
+        data: bson::Document,
+    ) -> Result<mongodb::ordered::OrderedDocument, DbError> {
+        let db = self.client.db(APPDB);
+        let coll = db.collection(collection);
+        let x = coll.find_one_and_replace(query, data, None)
+            .map_err(|_| DbError::ConnectionError)?;
+
+        match x {
+            Some(x) => Ok(x),
+            None => Err(DbError::NotFound),
+        }
+    }
+
     pub fn find(
         &self,
         collection: &str,

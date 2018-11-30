@@ -78,7 +78,7 @@ fn login(data: Form<Login>, state: State<App>) -> Result<String, Status> {
     let entry = state.db.find_one("users", query)?;
     println!("user entry retrieved");
 
-    let entry = Login::from_bson(entry)?;
+    let _entry = Login::from_bson(entry)?;
 
     let tok = Token::new(data.user.as_str())?;
     Ok(tok.to_string())
@@ -186,23 +186,45 @@ fn check_token(token: Token) -> Result<String, Status> {
 
 // =========================================================
 
-#[put("/jobs")]
-fn put_jobs(token: Token, state: State<App>) -> Result<String, Status> {
-    Ok(token.to_string())
-}
+#[put("/jobs/<id>", data="<input>")]
+fn put_jobs(token: Token, id: i64, input: Json<Job>, state: State<App>) -> Result<String, Status> {
 
-#[put("/jobs/single", data="<input>")]
-fn put_job(token: Token, input: Json<Job>, state: State<App>) -> Result<String, Status> {
- 
     let user = token.get_user_name()?;
-    let job = input.into_inner();
+    let query = doc! {
+        "id" : id,
+        "user": user.clone(),
+    };
+    let mut cursor = state.db.find("jobs", query)?;
+    if cursor.has_next().map_err(|_| Status::InternalServerError)?{
+        // replace
+        let mut job = input.into_inner();
+        job.user = user.clone();
 
-    let job_entry = bson::to_bson(&job).map_err(|_| Status::InternalServerError)?;
-    if let bson::Bson::Document(doc) = job_entry {
-        return match state.db.add_doc("jobs", doc) {
-            Ok(_) => Ok("ok".to_string()),
-            Err(_) => Err(Status::InternalServerError),
+        let query = doc! {
+            "id" : id,
+            "user": user.clone(),
         };
+        let job_entry = bson::to_bson(&job).map_err(|_| Status::InternalServerError)?;
+        if let bson::Bson::Document(doc) = job_entry {
+            return match state.db.replace_doc("jobs", query, doc) {
+                Ok(_) => Ok("ok".to_string()),
+                Err(_) => Err(Status::InternalServerError),
+            };
+        }
+    }
+    else
+    {
+        // create new
+        let mut job = input.into_inner();
+        job.user = user.clone();
+
+        let job_entry = bson::to_bson(&job).map_err(|_| Status::InternalServerError)?;
+        if let bson::Bson::Document(doc) = job_entry {
+            return match state.db.add_doc("jobs", doc) {
+                Ok(_) => Ok("ok".to_string()),
+                Err(_) => Err(Status::InternalServerError),
+            };
+        }
     }
 
     Err(Status::InternalServerError)
@@ -211,7 +233,9 @@ fn put_job(token: Token, input: Json<Job>, state: State<App>) -> Result<String, 
 #[get("/jobs")]
 fn get_jobs(token: Token, state: State<App>) -> Result<String, Status> {
 
+    let user = token.get_user_name()?;
     let query = doc! {
+        "user": user
     };
     let cursor = state.db.find("jobs", query)?;
 
@@ -226,8 +250,8 @@ fn get_jobs(token: Token, state: State<App>) -> Result<String, Status> {
     Ok(docs.to_json()?)
 }
 
-#[get("/jobs/<id>")]
-fn get_jobs_single(id: &RawStr, token: Token, state: State<App>) -> Result<String, Status> {
+#[get("/jobs/<_id>")]
+fn get_jobs_single(_id: &RawStr, _token: Token, _state: State<App>) -> Result<String, Status> {
     Ok("".to_string())
 }
 
@@ -239,7 +263,7 @@ fn put_news(token: Token) -> Result<String, Status> {
 }
 
 #[get("/news")]
-fn get_news(token: Option<Token>, state: State<App>) -> Result<String, Status> {
+fn get_news(_token: Option<Token>, state: State<App>) -> Result<String, Status> {
 
     let query = doc! {
     };
@@ -258,8 +282,8 @@ fn get_news(token: Option<Token>, state: State<App>) -> Result<String, Status> {
     Ok(docs.to_json()?)
 }
 
-#[get("/news/<id>")]
-fn get_news_single(id: &RawStr, token: Option<Token>, state: State<App>) -> Result<String, Status> {
+#[get("/news/<_id>")]
+fn get_news_single(_id: &RawStr, _token: Option<Token>, _state: State<App>) -> Result<String, Status> {
     Ok("".to_string())
 }
 
@@ -281,7 +305,6 @@ pub fn kickstart(app: App) {
                 get_jobs,
                 get_jobs_single,
                 put_jobs,
-                put_job,
                 get_news,
                 get_news_single,
                 put_news,

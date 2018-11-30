@@ -37,6 +37,9 @@ import Http exposing(..)
 import Tools exposing(..)
 import Ctx.Ctx as Ctx exposing(..)
 
+import Gen.Task as BeTask exposing(..)
+import Gen.Job as BeJob exposing(..)
+
 initApp: Ctx.Context -> String -> (Model, Cmd Msg)
 initApp ctx flags = 
             (Model Modal.hidden None 0 initSort [] 
@@ -80,19 +83,8 @@ type alias Job =
     , editing: Maybe (List Task)
     }
 
-mapif: (a -> Bool) -> (a -> a) -> List a -> List a
-mapif condition transform list =
-    let 
-        f = \elem ->
-            if condition elem then
-                transform elem
-            else
-                elem
-    in
-        list |> List.map f
 
-
-updateTask: JobId -> String -> Bool -> List Job -> List Job
+updateTask: JobId -> String -> Bool -> List Job -> (List Job, Cmd Msg)
 updateTask id taskName toggle jobs =
     let 
         foreachtask = \task ->
@@ -112,7 +104,7 @@ updateTask id taskName toggle jobs =
             else
                 job
     in
-        (List.map foreachjob jobs)
+        (jobs |> List.map foreachjob, Cmd.none)
 
 getJob: JobId -> List Job -> Maybe Job
 getJob id jobs = 
@@ -238,7 +230,7 @@ updateApp ctx msg model =
         DoneCreating -> 
             let
                 request = (\job -> job |> encodeJob |>
-                                Ctx.createJsonPutRequest ctx "jobs/single" |>
+                                Ctx.createJsonPutRequest ctx ("jobs/" ++ (Tools.tostr job.id)) |>
                                 Http.send GetJobsResponse)
             in
                 case model.creating of
@@ -275,7 +267,9 @@ updateApp ctx msg model =
 
         UpdateJob jobId viewKind -> 
             let 
+
                 cond = \job -> job.id == jobId
+
                 commitchanges = \job -> 
                     case job.editing of
                         Just l -> 
@@ -285,29 +279,39 @@ updateApp ctx msg model =
                                 editing = Nothing
                             }
                         Nothing -> job
+
                 extend = \job -> 
                             { job |
                                 view = viewKind,
                                 editing =  Just job.tasks
                             }
+
+                newjobs = case viewKind of
+                    Extended ->  model.jobs |> Tools.mapif cond extend
+                    Simple -> model.jobs |> Tools.mapif cond commitchanges
+
+                saveCmd =
+                    case Tools.getif newjobs (\j-> j.id == jobId) of
+                        Nothing -> Cmd.none
+                        Just j -> Cmd.batch[
+                                    j |> encodeJob |>
+                                    Ctx.createJsonPutRequest ctx ("jobs/" ++ (Tools.tostr j.id)) |>
+                                    Http.send GetJobsResponse
+                                ]
             in
-            (
-                case viewKind of
-                    Extended -> 
-                        { model | 
-                            jobs = model.jobs |> mapif cond extend
-                        }
-                    Simple -> 
-                        { model | 
-                            jobs = model.jobs |> mapif cond commitchanges
-                        }
-            , Cmd.none)
+            ( { model | 
+                jobs = newjobs
+              }
+            , saveCmd)
 
         UpdateTask jobId taskName enabled -> 
-            ({ model | 
-                jobs = (updateTask jobId taskName enabled model.jobs) 
-            }
-            , Cmd.none)
+            let 
+                (jbs, msgs) = (updateTask jobId taskName enabled model.jobs) 
+            in
+                ({ model | 
+                    jobs = jbs
+                }
+                , Cmd.batch [ msgs])
 
         SortBy col by ->  
             ({ model | sort =  by |> Tools.set col model.sort }
@@ -340,6 +344,7 @@ encodeJob: Job -> Enco.Value
 encodeJob job = Enco.object 
     [ ("id", Enco.int job.id ) 
     , ("name", Enco.string job.name ) 
+    , ("user", Enco.string "user" ) 
     , ("desc", Enco.string job.desc ) 
     , ("tasks",
         job.tasks |> Enco.list (\task -> encodeTask task)
@@ -356,36 +361,36 @@ encode model =
             |> Enco.list encodeJob 
 
 
-decodeTask : Deco.Decoder Task
-decodeTask =
-  map2 Task
-      (Deco.field "done" Deco.bool)
-      (Deco.field "name" Deco.string)
+-- decodeTask : Deco.Decoder Task
+-- decodeTask =
+--   map2 Task
+--       (Deco.field "done" Deco.bool)
+--       (Deco.field "name" Deco.string)
 
 
-type alias TmpJob = 
-    { id: JobId
-    , name: String
-    , desc: Maybe String
-    , tasks: Maybe (List Task)
-    , photos: Maybe (List String)
-    }
+-- type alias TmpJob = 
+--     { id: JobId
+--     , name: String
+--     , desc: Maybe String
+--     , tasks: Maybe (List Task)
+--     , photos: Maybe (List String)
+--     }
 
 
-decodeJob : Deco.Decoder TmpJob
-decodeJob =
-  map5 TmpJob
-      (Deco.field "id" Deco.int)
-      (Deco.field "name" Deco.string)
-      (Deco.maybe <| Deco.field "desc" Deco.string)
-      (Deco.maybe <| Deco.field "tasks" (Deco.list decodeTask))
-      (Deco.maybe <| Deco.field "photos" (Deco.list Deco.string))
+-- decodeJob : Deco.Decoder TmpJob
+-- decodeJob =
+--   map5 TmpJob
+--       (Deco.field "id" Deco.int)
+--       (Deco.field "name" Deco.string)
+--       (Deco.maybe <| Deco.field "desc" Deco.string)
+--       (Deco.maybe <| Deco.field "tasks" (Deco.list decodeTask))
+--       (Deco.maybe <| Deco.field "photos" (Deco.list Deco.string))
 
 
 decode: String -> Maybe Model
 decode str = 
     let
-        tmpdeco = Deco.decodeString (Deco.list decodeJob) str
+        tmpdeco = Deco.decodeString (Deco.list BeJob.decode) str
         maybecount =
             case tmpdeco of 
                 Ok jobs -> jobs 
