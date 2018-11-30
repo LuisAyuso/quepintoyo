@@ -23,6 +23,9 @@ import Feed.Feed as Feed exposing(..)
 
 import Ctx.Ctx as Ctx exposing(..)
 
+import Gen.Job exposing(..)
+import Gen.UserData exposing(..)
+
 -- =========================================================
 
 type alias KeyVal = (String, String) 

@@ -10,6 +10,8 @@ extern crate serde_derive;
 #[macro_use]
 extern crate serde_json;
 
+#[macro_use]
+extern crate elm_generator;
 
 pub mod conversion;
 pub mod error;
@@ -20,7 +22,7 @@ use mongodb::bson;
 
 // =========================================================
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Elm)]
 pub struct Task {
     pub name: String,
     pub done: bool,
@@ -28,7 +30,7 @@ pub struct Task {
 
 serialize_tools!(Task);
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Elm)]
 pub struct Job {
     // #[serde(rename = "_id")]  // Use MongoDB's special primary key field name when serializing
     pub id: i64,

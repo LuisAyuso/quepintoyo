@@ -353,7 +353,7 @@ encodeJob job = Enco.object
 encode: Model -> Enco.Value
 encode model = 
         model.jobs
-            |> Enco.list (\job -> encodeJob job)
+            |> Enco.list encodeJob 
 
 
 decodeTask : Deco.Decoder Task
