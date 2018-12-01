@@ -17,7 +17,7 @@ use mongodb::bson;
 use serde_json;
 
 use qpy_core::conversion::*;
-use qpy_core::Job;
+use qpy_core::structs::Job;
 
 use crate::appstate::AppState as App;
 use crate::login::token::Token;
@@ -269,7 +269,7 @@ fn get_news(_token: Option<Token>, state: State<App>) -> Result<String, Status> 
     };
     let cursor = state.db.find("news", query)?;
 
-    use qpy_core::NewsEntry;
+    use qpy_core::structs::NewsEntry;
 
     let docs: Vec<NewsEntry> = cursor
         .filter(|elem| elem.is_ok())

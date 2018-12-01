@@ -1,4 +1,4 @@
-use mongodb::bson;
+use mongodb::bson as bson;
 use serde_json;
 
 use crate::error;
@@ -12,6 +12,7 @@ pub trait Convert {
     fn to_bson(&self) -> Result<bson::Document, error::Conversion>;
     fn from_bson(doc: bson::Document) -> Result<Self::Elem, error::Conversion>;
 }
+
 
 #[macro_export]
 macro_rules! serialize_tools {
@@ -48,6 +49,51 @@ macro_rules! serialize_tools {
     };
 }
 
+// ===================================================================================
+
+pub struct VersionConvert<Type,Proxy>
+where Type: From<<Proxy as Convert>::Elem>,
+      Proxy:  Convert
+{
+    t: std::marker::PhantomData<Type>,
+    p: std::marker::PhantomData<Proxy>,
+}
+
+impl<Type,Proxy> VersionConvert<Type,Proxy>
+where Type: From<<Proxy as Convert>::Elem>,
+      Proxy:  Convert
+{ 
+    pub fn version_from_json(data: &str) -> Result<Type, error::Conversion>{
+        Proxy::from_json(data).map(|obj| obj.into())
+    }
+    pub fn version_from_bson(doc: bson::Document) -> Result<Type, error::Conversion>{
+        Proxy::from_bson(doc).map(|obj| obj.into())
+    }
+}
+
+// a macro that tries to convert from any of the given versions: 
+// target type + list of version types to try from
+#[macro_export]
+macro_rules! try_deserialize_bson {
+    ($expr:expr => $target:ty : $($proxy:ty),+) => {
+        {
+            $(
+                type T = $proxy;
+                if let Ok(v) = T::from_bson($expr.clone()){
+                    let res : $target = v.into();
+                    Ok(res)
+                }
+            )+
+            else{
+                Err($crate::error::Conversion::VersionUnknown)
+            }
+        }
+    }
+}
+
+// ====================================================================================
+// ====================================================================================
+
 #[cfg(test)]
 mod tests {
 
@@ -72,3 +118,4 @@ mod tests {
         assert_eq!(data, data2);
     }
 }
+

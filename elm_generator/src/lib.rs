@@ -105,22 +105,12 @@ enum ElmType {
 }
 
 impl ElmType {
-    fn to_string(&self) -> String {
-        match self {
-            ElmType::NotAType => panic!("not a type"),
-            ElmType::Struct(s) => s.name.clone(),
-            ElmType::List(s) => format!("List {}", s.to_string()),
-            ElmType::Maybe(s) => format!("Maybe {}", s.to_string()),
-            ElmType::Custom(s) => s.clone(),
-            ElmType::Native(s) => s.to_string(),
-        }
-    }
     fn name(&self) -> String {
         match self {
             ElmType::NotAType => panic!("not a type"),
             ElmType::Struct(s) => s.name.clone(),
-            ElmType::List(s) => "List".to_string(),
-            ElmType::Maybe(s) => "Maybe".to_string(),
+            ElmType::List(_) => "List".to_string(),
+            ElmType::Maybe(_) => "Maybe".to_string(),
             ElmType::Custom(s) => s.clone(),
             ElmType::Native(s) => s.to_string(),
         }
@@ -209,9 +199,9 @@ fn to_string<'ast>(path: &'ast syn::Path) -> String {
 fn map_code(ty: &ElmType, prefix: &str) -> String {
     match ty {
         ElmType::NotAType => panic!("not a type"),
-        ElmType::Struct(s) => panic!(""),
-        ElmType::List(s) => format!("{}.list", prefix),
-        ElmType::Maybe(s) => panic!("need to implement maybe"),
+        ElmType::Struct(_s) => panic!(""),
+        ElmType::List(_s) => format!("{}.list", prefix),
+        ElmType::Maybe(_s) => panic!("need to implement maybe"),
         ElmType::Custom(s) => {
             let f = match prefix{
                 "E" => "encode",
@@ -238,8 +228,8 @@ fn map_native_code<'ast>(ty: &str, prefix: &str) -> String {
 }
 
 fn to_primitive<'ast>(ty: &'ast syn::Path) -> Option<ElmType> {
-    let tyName = to_string(&ty);
-    match tyName.as_str() {
+    let tyname = to_string(&ty);
+    match tyname.as_str() {
         "String" => Some(ElmType::Native("String")),
         "str" => Some(ElmType::Native("String")),
 
@@ -425,22 +415,22 @@ import Json.Decode as D exposing (..)
 import Json.Encode as E exposing (..)
 "#;
 
-    file.write_all(header.as_bytes());
-    file.write_all(b"\n");
-    file.write_all(import.as_bytes());
+    file.write_all(header.as_bytes()).unwrap();
+    file.write_all(b"\n").unwrap();
+    file.write_all(import.as_bytes()).unwrap();
 
     for dep in deps.iter().dedup(){
         let imp = format!("import Gen.{} exposing (..)", dep);
-        file.write_all(imp.as_bytes());
-        file.write_all(b"\n");
+        file.write_all(imp.as_bytes()).unwrap();
+        file.write_all(b"\n").unwrap();
     }
 
-    file.write_all(b"\n");
-    file.write_all(ty.to_elm().as_bytes());
-    file.write_all(b"\n");
-    file.write_all(ty.elm_encode().as_bytes());
-    file.write_all(b"\n");
-    file.write_all(ty.elm_decode().as_bytes());
+    file.write_all(b"\n").unwrap();
+    file.write_all(ty.to_elm().as_bytes()).unwrap();
+    file.write_all(b"\n").unwrap();
+    file.write_all(ty.elm_encode().as_bytes()).unwrap();
+    file.write_all(b"\n").unwrap();
+    file.write_all(ty.elm_decode().as_bytes()).unwrap();
 }
 
 #[cfg(test)]

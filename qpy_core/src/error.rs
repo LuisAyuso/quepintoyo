@@ -2,6 +2,7 @@
 pub enum Conversion {
     BsonFailed,
     JsonFailed,
+    VersionUnknown,
 }
 
 impl std::convert::From<crate::error::Conversion> for rocket::http::Status {
