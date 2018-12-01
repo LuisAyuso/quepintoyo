@@ -18,7 +18,7 @@ extern crate crypto;
 extern crate jwt;
 extern crate rustc_serialize;
 
-#[macro_use(serialize_tools)]
+#[macro_use(serialize_tools, try_deserialize_bson)]
 extern crate qpy_core;
 
 #[macro_use]

@@ -233,6 +233,8 @@ fn put_jobs(token: Token, id: i64, input: Json<Job>, state: State<App>) -> Resul
 #[get("/jobs")]
 fn get_jobs(token: Token, state: State<App>) -> Result<String, Status> {
 
+    use qpy_core::structs::JobV1;
+
     let user = token.get_user_name()?;
     let query = doc! {
         "user": user
@@ -243,7 +245,7 @@ fn get_jobs(token: Token, state: State<App>) -> Result<String, Status> {
         .filter(|elem| elem.is_ok())
         .map(|elem| {
             let e = elem.unwrap();
-            Job::from_bson(e).unwrap()
+            try_deserialize_bson!(e => Job : JobV1).expect("must convert")
         })
         .collect();
 
