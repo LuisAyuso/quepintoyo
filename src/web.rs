@@ -17,7 +17,7 @@ use mongodb::bson;
 use serde_json;
 
 use qpy_core::conversion::*;
-use qpy_core::structs::Job;
+use qpy_core::structs::*;
 
 use crate::appstate::AppState as App;
 use crate::login::token::Token;
@@ -190,23 +190,23 @@ fn check_token(token: Token) -> Result<String, Status> {
 fn put_jobs(token: Token, id: i64, input: Json<Job>, state: State<App>) -> Result<String, Status> {
 
     let user = token.get_user_name()?;
+    let collection = format!("jobs_{}", user);
+
     let query = doc! {
         "id" : id,
-        "user": user.clone(),
     };
-    let mut cursor = state.db.find("jobs", query)?;
+    let mut cursor = state.db.find(collection.as_str(), query)?;
     if cursor.has_next().map_err(|_| Status::InternalServerError)?{
         // replace
-        let mut job = input.into_inner();
-        job.user = user.clone();
+        let job = input.into_inner();
+        //job.user = user.clone();
 
         let query = doc! {
             "id" : id,
-            "user": user.clone(),
         };
         let job_entry = bson::to_bson(&job).map_err(|_| Status::InternalServerError)?;
         if let bson::Bson::Document(doc) = job_entry {
-            return match state.db.replace_doc("jobs", query, doc) {
+            return match state.db.replace_doc(collection.as_str(), query, doc) {
                 Ok(_) => Ok("ok".to_string()),
                 Err(_) => Err(Status::InternalServerError),
             };
@@ -215,12 +215,11 @@ fn put_jobs(token: Token, id: i64, input: Json<Job>, state: State<App>) -> Resul
     else
     {
         // create new
-        let mut job = input.into_inner();
-        job.user = user.clone();
+        let job = input.into_inner();
 
         let job_entry = bson::to_bson(&job).map_err(|_| Status::InternalServerError)?;
         if let bson::Bson::Document(doc) = job_entry {
-            return match state.db.add_doc("jobs", doc) {
+            return match state.db.add_doc(collection.as_str(), doc) {
                 Ok(_) => Ok("ok".to_string()),
                 Err(_) => Err(Status::InternalServerError),
             };
@@ -236,16 +235,17 @@ fn get_jobs(token: Token, state: State<App>) -> Result<String, Status> {
     use qpy_core::structs::JobV1;
 
     let user = token.get_user_name()?;
+    let collection = format!("jobs_{}", user);
+
     let query = doc! {
-        "user": user
     };
-    let cursor = state.db.find("jobs", query)?;
+    let cursor = state.db.find(collection.as_str(), query)?;
 
     let docs: Vec<Job> = cursor
         .filter(|elem| elem.is_ok())
         .map(|elem| {
             let e = elem.unwrap();
-            try_deserialize_bson!(e => Job : JobV1).expect("must convert")
+            try_deserialize_bson!(e => Job : JobV2, JobV1).expect("must convert")
         })
         .collect();
 

@@ -27,8 +27,8 @@ pub struct JobV1 {
 serialize_tools!(JobV1);
 serialize_tools!(Vec<JobV1>);
 
-#[derive(Serialize, Deserialize, Debug, Elm)]
-pub struct Job {
+#[derive(Serialize, Deserialize, Debug)]
+pub struct JobV2 {
     // #[serde(rename = "_id")]  // Use MongoDB's special primary key field name when serializing
     pub id: i64,
     pub user: String,
@@ -39,12 +39,12 @@ pub struct Job {
     pub photos: Option<Vec<String>>,
 }
 
-serialize_tools!(Job);
-serialize_tools!(Vec<Job>);
+serialize_tools!(JobV2);
+serialize_tools!(Vec<JobV2>);
 
-impl From<JobV1> for Job{
-    fn from(j: JobV1) -> Job {
-        Job{
+impl From<JobV1> for JobV2{
+    fn from(j: JobV1) -> JobV2 {
+        JobV2{
             id : j.id,
             user: j.user,
             name: j.name,
@@ -56,14 +56,42 @@ impl From<JobV1> for Job{
     }
 }
 
-// =========================================================
 
-// type alias Entry = 
-//     { title: String
-//     , content: String
-//     , photos: Maybe (List Url)
-//     , link: Maybe Url
-//     }
+#[derive(Serialize, Deserialize, Debug, Elm)]
+pub struct Job {
+    // #[serde(rename = "_id")]  // Use MongoDB's special primary key field name when serializing
+    pub id: i64,
+    pub name: String,
+    pub created: f64,
+    pub lastmod: f64,
+    pub desc: Option<String>,
+    pub tasks: Option<Vec<Task>>,
+    pub photos: Option<Vec<String>>,
+}
+
+serialize_tools!(Job);
+serialize_tools!(Vec<Job>);
+
+impl From<JobV2> for Job{
+    fn from(j: JobV2) -> Job {
+        Job{
+            id : j.id,
+            name: j.name,
+            created: 0f64,
+            lastmod: 0f64,
+            desc: j.desc,
+            tasks: j.tasks,
+            photos: j.photos,
+        }
+    }
+}
+impl From<JobV1> for Job{
+    fn from(j: JobV1) -> Job {
+        let tmp : JobV2 = j.into();
+        tmp.into()
+    }
+}
+// =========================================================
 
 #[derive(Serialize, Deserialize, Debug, Elm)]
 pub struct NewsEntry {

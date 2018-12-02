@@ -357,7 +357,7 @@ encodeJob job =
 
 toBe:  Job -> BeJob.Job
 toBe job = 
-    BeJob.Job job.id "user" job.name 0.0 (Just job.desc) (Just job.tasks) (Just job.photos)
+    BeJob.Job job.id job.name 0.0 0.0 (Just job.desc) (Just job.tasks) (Just job.photos)
 
 fromBe:  BeJob.Job -> Job
 fromBe job = 
