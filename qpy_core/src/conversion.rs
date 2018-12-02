@@ -77,16 +77,18 @@ where Type: From<<Proxy as Convert>::Elem>,
 macro_rules! try_deserialize_bson {
     ($expr:expr => $target:ty : $($proxy:ty),+) => {
         {
+            // try convert from the target type, AKA latest structure version
+            type Trg = $target;
+            Trg::from_bson($expr.clone())
             $(
-                type T = $proxy;
-                if let Ok(v) = T::from_bson($expr.clone()){
-                    let res : $target = v.into();
-                    Ok(res)
-                }
+                // othewise try to convert from each of the older versions
+                .or_else(|_| {
+                    type Proxy = $proxy;
+                    Proxy::from_bson($expr.clone()).map(|elem| elem.into())
+                })
             )+
-            else{
-                Err($crate::error::Conversion::VersionUnknown)
-            }
+            // if not, we have an error
+            .or_else(|_| Err($crate::error::Conversion::VersionUnknown))
         }
     }
 }
