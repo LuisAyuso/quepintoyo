@@ -34,6 +34,9 @@ import Json.Decode as Deco exposing (..)
 
 import Http exposing(..) 
 
+import Time exposing(..)
+import Task exposing(..)
+
 import Tools exposing(..)
 import Ctx.Ctx as Ctx exposing(..)
 
@@ -169,6 +172,7 @@ type Msg = Noop
         | EditJob JobId
         | ChangeName String
         | ChangeDesc String
+        | GetTime Time.Posix
         | DoneCreating 
         | CancelCreating
 
@@ -182,6 +186,8 @@ type Msg = Noop
         -- persistence answers
         | NewJobResponse (Result Http.Error String)
         | GetJobsResponse (Result Http.Error String)
+
+        | DoWithTime (Time.Posix -> (Model, Cmd Msg)) Time.Posix 
 
 
 updateApp: Ctx.Context -> Msg -> Model -> (Model, Cmd Msg)
@@ -226,6 +232,8 @@ updateApp ctx msg model =
                     }
                 None -> model
             , Cmd.none)
+
+        GetTime _ -> (model, Cmd.none)
 
         DoneCreating -> 
             let
@@ -326,65 +334,52 @@ updateApp ctx msg model =
                         Nothing -> (model, Cmd.none)
                         Just m -> (m, Cmd.none)
 
+        DoWithTime f t -> t |>  f
+
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model = updateApp Ctx.initCtx msg model
 
 -- =================================================================
 -- serialize routines
 
-
-encodeTask: Task -> Enco.Value
-encodeTask task = Enco.object 
-    [ ("name", Enco.string task.name)
-    , ("done", Enco.bool task.done)
-    ]
-
+getNewTime : Cmd Msg
+getNewTime =
+  Task.perform GetTime Time.now
 
 encodeJob: Job -> Enco.Value
-encodeJob job = Enco.object 
-    [ ("id", Enco.int job.id ) 
-    , ("name", Enco.string job.name ) 
-    , ("user", Enco.string "user" ) 
-    , ("desc", Enco.string job.desc ) 
-    , ("tasks",
-        job.tasks |> Enco.list (\task -> encodeTask task)
-      )
-    , ("photos",
-        job.photos |> Enco.list Enco.string
-      )
-    ]
+encodeJob job = 
+        job |> toBe |> BeJob.encode 
+
+-- =========================================================
+-- =========================================================
+
+-- convert routines from the BE data into the state/data object for the FE 
+
+toBe:  Job -> BeJob.Job
+toBe job = 
+    BeJob.Job job.id "user" job.name 0.0 (Just job.desc) (Just job.tasks) (Just job.photos)
+
+fromBe:  BeJob.Job -> Job
+fromBe job = 
+        Job 
+            job.id 
+            job.name 
+            (Maybe.withDefault "" job.desc) 
+            (Maybe.withDefault [] job.tasks)
+            (Maybe.withDefault [] job.photos)
+            -- default editing values
+            Simple 
+            Nothing
+
+
+-- =========================================================
+-- =========================================================
 
 
 encode: Model -> Enco.Value
 encode model = 
         model.jobs
             |> Enco.list encodeJob 
-
-
--- decodeTask : Deco.Decoder Task
--- decodeTask =
---   map2 Task
---       (Deco.field "done" Deco.bool)
---       (Deco.field "name" Deco.string)
-
-
--- type alias TmpJob = 
---     { id: JobId
---     , name: String
---     , desc: Maybe String
---     , tasks: Maybe (List Task)
---     , photos: Maybe (List String)
---     }
-
-
--- decodeJob : Deco.Decoder TmpJob
--- decodeJob =
---   map5 TmpJob
---       (Deco.field "id" Deco.int)
---       (Deco.field "name" Deco.string)
---       (Deco.maybe <| Deco.field "desc" Deco.string)
---       (Deco.maybe <| Deco.field "tasks" (Deco.list decodeTask))
---       (Deco.maybe <| Deco.field "photos" (Deco.list Deco.string))
 
 
 decode: String -> Maybe Model
@@ -401,21 +396,11 @@ decode str =
             case maybecount of 
                 Just n -> n + 1
                 _ -> 0
-
-        decoFunc = (\j -> Job 
-                            j.id 
-                            j.name 
-                            (Maybe.withDefault "" j.desc) 
-                            (Maybe.withDefault [] j.tasks)
-                            (Maybe.withDefault [] j.photos)
-                            -- default editing values
-                            Simple 
-                            Nothing)
     in
        case tmpdeco of 
            Ok jobs ->  
                 jobs
-                    |> List.map decoFunc
+                    |> List.map fromBe
                     |> Model Modal.hidden None count initSort
                     |> Just
            Err _ -> Nothing
