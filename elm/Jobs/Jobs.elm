@@ -37,6 +37,9 @@ import Http exposing(..)
 import Time exposing(..)
 import Task exposing(..)
 
+import File exposing (..)
+import File.Select exposing (..)
+
 import Tools exposing(..)
 import Ctx.Ctx as Ctx exposing(..)
 
@@ -172,6 +175,8 @@ type Msg = Noop
         | EditJob JobId
         | ChangeName String
         | ChangeDesc String
+        | SelectFile 
+        | OpenFile File.File
         | GetTime Time.Posix
         | DoneCreating 
         | CancelCreating
@@ -335,6 +340,9 @@ updateApp ctx msg model =
                         Just m -> (m, Cmd.none)
 
         DoWithTime f t -> t |>  f
+
+        SelectFile -> (model, File.Select.file ["image/*"] OpenFile)
+        OpenFile _ -> (model, Cmd.none)
 
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model = updateApp Ctx.initCtx msg model
@@ -600,28 +608,23 @@ viewNewModal model =
                 |> Modal.hideOnBackdropClick True
                 |> Modal.h3 [] [ text title ]
                 |> Modal.body [] 
-                    [ InputGroup.config
-                        (InputGroup.text 
-                            [ Input.placeholder job.name
-                            , Input.onInput ChangeName
-                            ])
-                        |> InputGroup.predecessors
-                            [ InputGroup.span [] 
-                                [ text "Nombre:" 
-                                ]
+                    [  Form.form []
+                        [ Form.group []
+                            [ Form.label [for "name"] [ text "Nombre: "]
+                            , Input.text [ Input.id "name", Input.onInput ChangeName ]
+                            , Form.help [] [ text "Pon un nombre al trabajo." ]
                             ]
-                        |> InputGroup.view
-                    , InputGroup.config
-                        (InputGroup.text 
-                            [ Input.placeholder job.desc
-                            , Input.onInput ChangeDesc
-                            ])
-                        |> InputGroup.predecessors
-                            [ InputGroup.span [] 
-                                [ text "Descripción:" 
-                                ]
+                        , Form.group []
+                            [ Form.label [for "desc"] [ text "Descripción: "]
+                            , Input.text [ Input.id "desc", Input.onInput ChangeDesc ]
+                            , Form.help [] [ text "Cuentanos un poco más de este trabajo." ]
                             ]
-                        |> InputGroup.view
+                        -- , Button.button
+                        --     [ Button.outlineSecondary
+                        --     , Button.attrs [ onClick (SelectFile) ]
+                        --     ]
+                        --     [ text "subir foto!" ]
+                        ]
                     ]
                 |> Modal.footer []
                     [ Button.button
