@@ -49,10 +49,7 @@ import Gen.Job as BeJob exposing(..)
 initApp: Ctx.Context -> String -> (Model, Cmd Msg)
 initApp ctx flags = 
             (Model Modal.hidden None 0 initSort [] 
-            , Cmd.batch [ 
-                    Ctx.createGetRequest ctx "jobs" |>
-                    Http.send GetJobsResponse 
-               ] 
+            , Ctx.createGetRequest ctx "jobs"  GetJobsResponse 
             )
 
 
@@ -242,8 +239,9 @@ updateApp ctx msg model =
         DoneCreating -> 
             let
                 request = (\job -> job |> encodeJob |>
-                                Ctx.createJsonPutRequest ctx ("jobs/" ++ (Tools.tostr job.id)) |>
-                                Http.send GetJobsResponse)
+                    Ctx.createJsonPutRequest ctx 
+                                            ("jobs/" ++ (Tools.tostr job.id)) 
+                                            GetJobsResponse)
             in
                 case model.creating of
 
@@ -307,8 +305,9 @@ updateApp ctx msg model =
                         Nothing -> Cmd.none
                         Just j -> Cmd.batch[
                                     j |> encodeJob |>
-                                    Ctx.createJsonPutRequest ctx ("jobs/" ++ (Tools.tostr j.id)) |>
-                                    Http.send GetJobsResponse
+                                    Ctx.createJsonPutRequest ctx 
+                                                        ("jobs/" ++ (Tools.tostr j.id))
+                                                        GetJobsResponse
                                 ]
             in
             ( { model | 

@@ -76,11 +76,8 @@ initApp ctx flags = (Model  [] "no error"
                     -- [ NewsEntry "one" "two" Nothing Nothing
                     -- , NewsEntry "two" "fasgfasfqa" Nothing Nothing
                     -- ] "no error"
-            , Cmd.batch [ 
-                    Ctx.createGetRequest ctx "news" |>
-                    Http.send NewsResponse 
-               ] 
-            )
+                    , Ctx.createGetRequest ctx "news"  NewsResponse 
+                    )
 
 init: String -> (Model, Cmd Msg)
 init flags = 

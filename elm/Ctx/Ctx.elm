@@ -9,6 +9,8 @@ import Json.Encode as Enco exposing (..)
 
 type Context = NoAuth | WithJwt String
 
+type alias RespFn msg = Result Http.Error String -> msg 
+
 initCtx: Context
 initCtx = NoAuth
 
@@ -18,31 +20,31 @@ ctxWithToken token =
         Nothing -> NoAuth
         Just t -> WithJwt t
 
-createFormPostRequest: Context -> String -> String -> Http.Request String
-createFormPostRequest ctx url payload =  
+createFormPostRequest: Context -> String -> String -> RespFn msg -> Cmd msg
+createFormPostRequest ctx url payload msg =  
     payload
         |> Http.stringBody "application/x-www-form-urlencoded"
-        |> httpPost ctx url
+        |> httpPost ctx url msg
 
-createJsonPutRequest: Context -> String -> Enco.Value -> Http.Request String
-createJsonPutRequest ctx url json_payload =  
+createJsonPutRequest: Context -> String -> RespFn msg -> Enco.Value -> Cmd msg
+createJsonPutRequest ctx url msg json_payload =  
     json_payload 
         |> Enco.encode 0 
         |> Http.stringBody "application/json"
-        |> httpPut ctx url
+        |> httpPut ctx url msg
 
-createGetRequest: Context -> String -> Http.Request String
-createGetRequest ctx url = 
-    httpCompose "GET" ctx url Http.emptyBody
+createGetRequest: Context -> String -> RespFn msg -> Cmd msg
+createGetRequest ctx url msg = 
+    httpCompose "GET" ctx url msg Http.emptyBody 
 
-httpPost: Context -> String -> Http.Body ->  Http.Request String
-httpPost ctx url body = httpCompose "POST" ctx url body
+httpPost: Context -> String -> RespFn msg -> Http.Body ->  Cmd msg
+httpPost ctx url msg body  = httpCompose "POST" ctx url msg body
 
-httpPut: Context -> String -> Http.Body ->  Http.Request String
-httpPut ctx url body = httpCompose "PUT" ctx url body
+httpPut: Context -> String -> RespFn msg -> Http.Body ->  Cmd msg
+httpPut ctx url msg body = httpCompose "PUT" ctx url msg body
 
-httpCompose: String -> Context -> String -> Http.Body -> Http.Request String
-httpCompose method ctx url body =
+httpCompose: String -> Context -> String -> RespFn msg -> Http.Body -> Cmd msg
+httpCompose method ctx url msg body =
     let 
         header = 
             case ctx of
@@ -50,14 +52,14 @@ httpCompose method ctx url body =
                 WithJwt token -> [ Http.header "Authorization" ("Bearer " ++ token) ]
     in 
         Http.request
-            { method = method
-            , headers = header
-            , url = url
-            , body = body
-            , expect = Http.expectString
-            , timeout = Nothing
-            , withCredentials = False
-            } 
+        { method = method
+        , headers = header 
+        , url = url
+        , body = body
+        , expect =  Http.expectString msg
+        , timeout = Nothing
+        , tracker = Nothing
+        }
 
 -- ==========================================
 -- stand alone code for debug

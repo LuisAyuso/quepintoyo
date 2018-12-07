@@ -24,7 +24,6 @@ import Browser.Navigation as Navigation
 import Browser exposing (UrlRequest)
 
 import Http exposing (..)
-import Http.Progress exposing (..)
 import Json.Decode as Decode exposing (list, string)
 import Json.Encode as Encode
 
@@ -64,6 +63,8 @@ type Msg
     -- some components state
     | TabMsg Tab.State
 
+    | NoOp
+
 init: String -> (Model, Cmd Msg)
 init flags = 
     ({callback= ""
@@ -88,30 +89,32 @@ loginDone model =
 -- ==================================================================
 -- ==================================================================
 
-doLogin: String -> String -> Http.Request String
-doLogin usr passwrd =  
+type alias RespFn = Result Http.Error String -> Msg
+
+doLogin: String -> String -> RespFn -> Cmd Msg
+doLogin usr passwrd msg =  
     encodeLogin usr passwrd
         |> Http.stringBody "application/x-www-form-urlencoded"
-        |> httpPost "login"
+        |> httpPost "login" msg
 
-doRegister: String -> String -> Http.Request String
-doRegister usr passwrd = 
+doRegister: String -> String -> RespFn -> Cmd Msg
+doRegister usr passwrd msg = 
     encodeLogin usr passwrd
         |> Http.stringBody "application/x-www-form-urlencoded"
-        |> httpPost "register"
+        |> httpPost "register" msg
 
 
-httpPost: String -> Http.Body -> Http.Request String
-httpPost url body =
+httpPost: String -> RespFn -> Http.Body -> Cmd Msg
+httpPost url msg body =
     Http.request
-        { method = "POST"
-        , headers = []
-        , url = url
-        , body = body
-        , expect = Http.expectString
-        , timeout = Nothing
-        , withCredentials = False
-        } 
+     { method = "POST"
+    , headers = []
+    , url = url
+    , body = body
+    , expect =  Http.expectString msg
+    , timeout = Nothing
+    , tracker = Nothing
+    }
 
 encodeLogin: String -> String -> String
 encodeLogin usr passwrd =
@@ -129,29 +132,29 @@ formUrlencoded object =
             )
         |> String.join "&"
 
-buildRequest: String -> Http.Request String
-buildRequest token  = 
+buildRequest: String -> RespFn -> Cmd Msg
+buildRequest token msg  = 
   let 
     headers =
               [ Http.header "Authorization" ("Bearer " ++ token) 
               ]
   in
     Http.request
-    { body = Http.emptyBody
-    , expect = Http.expectString 
-    , headers = headers
-    , method = "GET"
-    , timeout = Nothing 
+     { method = "GET"
+    , headers = []
     , url = "check_token"
-    , withCredentials = False
-    } 
+    , body = Http.emptyBody
+    , expect =  Http.expectString msg
+    , timeout = Nothing
+    , tracker = Nothing
+    }
 
 testSession: Model -> String -> String -> (Model, Cmd Msg)
 testSession model user_name test_token  = 
     ({model |
         user = user_name
     }
-    , buildRequest test_token |> Http.send TestResponse
+    , buildRequest test_token TestResponse
     )
 
 -- ==================================================================
@@ -212,6 +215,8 @@ update msg model =
                     , password2 = ""
                     }
 
+                NoOp -> model
+
         validation = 
             case Validate.validate modelValidator newmodel of
                 Err [] -> Just "error desconocido"
@@ -231,8 +236,8 @@ update msg model =
             case validmodel.validationStr of
                 Nothing -> 
                     case msg of
-                        DoLogin    -> Cmd.batch [ doLogin model.user model.password |> Http.send LoginResponse ] 
-                        DoRegister -> Cmd.batch [ doRegister model.user model.password |> Http.send LoginResponse ] 
+                        DoLogin    -> Cmd.batch [ doLogin model.user model.password LoginResponse ] 
+                        DoRegister -> Cmd.batch [ doRegister model.user model.password LoginResponse ] 
                         _ -> Cmd.none
                 Just _ -> Cmd.none
     in
