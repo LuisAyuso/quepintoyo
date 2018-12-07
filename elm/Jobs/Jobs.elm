@@ -2,7 +2,7 @@ module Jobs.Jobs exposing (Model, Msg(..), viewJobs, viewGrid, viewNewButton, vi
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick)
+import Html.Events exposing (onClick, on)
 import Browser.Navigation as Navigation
 import Browser exposing (UrlRequest)
 
@@ -175,8 +175,7 @@ type Msg = Noop
         | EditJob JobId
         | ChangeName String
         | ChangeDesc String
-        | SelectFile 
-        | OpenFile File.File
+        | GotFiles (List File.File)
         | GetTime Time.Posix
         | DoneCreating 
         | CancelCreating
@@ -341,8 +340,9 @@ updateApp ctx msg model =
 
         DoWithTime f t -> t |>  f
 
-        SelectFile -> (model, File.Select.file ["image/*"] OpenFile)
-        OpenFile _ -> (model, Cmd.none)
+        GotFiles _ -> (model, Cmd.none)
+        -- File.Select.file ["image/*"] OpenFile)
+
 
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model = updateApp Ctx.initCtx msg model
@@ -458,6 +458,16 @@ viewExtendedJob job =
                 [ Progress.info
                 , Progress.value (computeCompletness tasks)
                 ]
+
+        , br [] []
+
+        , input
+            [ type_ "file"
+            , multiple True
+            , on "change" (Deco.map GotFiles filesDecoder)
+            ] []
+        , Form.help [] [ text "sube alguna foto del progreso o del trabajo terminado." ]
+
         , br [] []
         , Button.button 
             [ Button.primary
@@ -488,6 +498,9 @@ viewSimpleJob job =
         [ text "Actualizar" ]
     ]
 
+filesDecoder : Deco.Decoder (List File)
+filesDecoder =
+    Deco.at ["target","files"] (Deco.list File.decoder)
 
 viewJob: Job -> Html Msg
 viewJob job =
@@ -619,11 +632,9 @@ viewNewModal model =
                             , Input.text [ Input.id "desc", Input.onInput ChangeDesc ]
                             , Form.help [] [ text "Cuentanos un poco más de este trabajo." ]
                             ]
-                        -- , Button.button
-                        --     [ Button.outlineSecondary
-                        --     , Button.attrs [ onClick (SelectFile) ]
-                        --     ]
-                        --     [ text "subir foto!" ]
+
+
+
                         ]
                     ]
                 |> Modal.footer []
